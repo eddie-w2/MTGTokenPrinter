@@ -33,7 +33,13 @@ jobs:
           TOKENPRINTER_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           TOKENPRINTER_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           TOKENPRINTER_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle assembleDebug assembleRelease --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug assembleRelease --stacktrace 2>&1 | tee build.log || {
+            # Surface the reason as annotations so it shows at the top of the run page.
+            grep -E "^e: |What went wrong|Execution failed|error:|Error:|FAILED" -A3 build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1
+          }
       - name: Remove key file
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"
