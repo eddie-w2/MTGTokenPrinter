@@ -1,3 +1,5 @@
+import java.io.File
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -13,7 +15,7 @@ val sStorePass = signingSetting("TOKENPRINTER_STORE_PASSWORD")
 val sKeyAlias = signingSetting("TOKENPRINTER_KEY_ALIAS")
 val sKeyPass = signingSetting("TOKENPRINTER_KEY_PASSWORD")
 val haveKey = sStorePath != null && sStorePass != null && sKeyAlias != null && sKeyPass != null &&
-    java.io.File(sStorePath).exists()
+    File(sStorePath).exists()
 
 android {
     namespace = "com.example.tokenprinter"
@@ -29,7 +31,7 @@ android {
     signingConfigs {
         if (haveKey) {
             create("tokenprinter") {
-                storeFile = java.io.File(sStorePath!!)
+                storeFile = File(sStorePath!!)
                 storePassword = sStorePass
                 keyAlias = sKeyAlias
                 keyPassword = sKeyPass
