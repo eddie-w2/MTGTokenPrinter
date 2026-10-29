@@ -3,6 +3,18 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Signing key settings. They come from ~/.gradle/gradle.properties on your computer, or from environment
+// variables on GitHub. None of the values live in this repo. Without them, builds use the debug key.
+fun signingSetting(name: String): String? =
+    providers.gradleProperty(name).orElse(providers.environmentVariable(name)).orNull?.takeIf { it.isNotBlank() }
+
+val sStorePath = signingSetting("TOKENPRINTER_STORE_FILE")
+val sStorePass = signingSetting("TOKENPRINTER_STORE_PASSWORD")
+val sKeyAlias = signingSetting("TOKENPRINTER_KEY_ALIAS")
+val sKeyPass = signingSetting("TOKENPRINTER_KEY_PASSWORD")
+val haveKey = sStorePath != null && sStorePass != null && sKeyAlias != null && sKeyPass != null &&
+    java.io.File(sStorePath).exists()
+
 android {
     namespace = "com.example.tokenprinter"
     compileSdk = 36
@@ -14,12 +26,25 @@ android {
         versionCode = 6
         versionName = "0.6"
     }
+    signingConfigs {
+        if (haveKey) {
+            create("tokenprinter") {
+                storeFile = java.io.File(sStorePath!!)
+                storePassword = sStorePass
+                keyAlias = sKeyAlias
+                keyPassword = sKeyPass
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Personal-use app: sign release builds with the debug key so the APK installs directly,
-            // and updates cleanly over debug builds you already have on the phone.
-            signingConfig = signingConfigs.getByName("debug")
+            // Your own key when its settings are present, otherwise the debug key so the build still installs.
+            signingConfig = signingConfigs.getByName(if (haveKey) "tokenprinter" else "debug")
+        }
+        debug {
+            // Same key for debug builds, so Studio and GitHub builds update each other.
+            if (haveKey) signingConfig = signingConfigs.getByName("tokenprinter")
         }
     }
     compileOptions {

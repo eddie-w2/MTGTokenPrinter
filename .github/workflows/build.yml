@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  debug-apk:
+  apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -17,9 +17,27 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 9.8.2
-      - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "TOKENPRINTER_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "Signing with the project key."
+          else
+            echo "No signing key set. Using the debug key."
+          fi
+      - name: Build APKs
+        env:
+          TOKENPRINTER_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          TOKENPRINTER_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          TOKENPRINTER_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle assembleDebug assembleRelease --stacktrace
+      - name: Remove key file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
       - uses: actions/upload-artifact@v5
         with:
-          name: TokenPrinter-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: TokenPrinter-apks
+          path: app/build/outputs/apk/*/*.apk
