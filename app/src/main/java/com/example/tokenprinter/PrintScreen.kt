@@ -2,8 +2,7 @@
 
 package com.example.tokenprinter
 
-import android.content.ClipData
-import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -84,6 +83,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -124,11 +124,15 @@ fun PrintDialog(vm: MainViewModel, ui: PrintUi, withBle: (() -> Unit) -> Unit) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val set: (Opts) -> Unit = { vm.setOpts(it) }
 
-    Dialog(
-        onDismissRequest = { vm.closePrint() },
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+    // Part of the app window rather than a pop-up Dialog window. A Dialog doesn't receive the system bar sizes
+    // when the app draws edge to edge, which pushed the Print and Export bar under the navigation bar on some
+    // phones. Here the Scaffold and the bottom bar get the real insets on every device.
+    BackHandler { vm.closePrint() }
+    run {
+        Surface(
+            Modifier.fillMaxSize().pointerInput(Unit) {}, // also stops touches reaching the screen underneath
+            color = MaterialTheme.colorScheme.surface,
+        ) {
             Scaffold(
                 topBar = {
                     TopAppBar(
@@ -493,7 +497,7 @@ private fun GoblinOptions(goblin: Int, onPick: (Int) -> Unit) {
 @Composable
 private fun ExportDialog(vm: MainViewModel, onClose: () -> Unit) {
     val ctx = LocalContext.current
-    var style by rememberSaveable { mutableStateOf(ExportStyle.Gray) }
+    var style by rememberSaveable { mutableStateOf(vm.lastExportStyle()) }
     val saveAs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { uri ->
         if (uri != null) vm.writeExport(style, uri)
         onClose()
@@ -524,15 +528,8 @@ private fun ExportDialog(vm: MainViewModel, onClose: () -> Unit) {
         },
         confirmButton = {
             Button(onClick = {
-                vm.shareExport(style) { uri ->
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/jpeg"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        clipData = ClipData.newRawUri("", uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    ctx.startActivity(Intent.createChooser(send, "Send token image"))
-                }
+                vm.rememberExport(style, share = true)
+                vm.shareExport(style) { uri -> ctx.startActivity(TokenExport.shareIntent(uri)) }
                 onClose()
             }) {
                 Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -544,6 +541,7 @@ private fun ExportDialog(vm: MainViewModel, onClose: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = onClose) { Text("Cancel") }
                 OutlinedButton(onClick = {
+                    vm.rememberExport(style, share = false)
                     if (TokenExport.canSaveToPictures) {
                         vm.saveExport(style)
                         onClose()

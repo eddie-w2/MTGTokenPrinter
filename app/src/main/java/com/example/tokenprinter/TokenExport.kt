@@ -1,7 +1,9 @@
 package com.example.tokenprinter
 
 import android.content.ContentValues
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -112,4 +114,15 @@ object TokenExport {
 
     fun shareUri(ctx: Context, f: File): Uri =
         FileProvider.getUriForFile(ctx, ctx.packageName + ".files", f)
+
+    /** The share sheet for an exported image. */
+    fun shareIntent(uri: Uri): Intent {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = ClipData.newRawUri("", uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        return Intent.createChooser(send, "Send token image")
+    }
 }

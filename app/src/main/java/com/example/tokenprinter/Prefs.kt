@@ -69,6 +69,13 @@ class Prefs(ctx: Context) {
     var profileId: String
         get() = sp.getString("profile", "lx-d02") ?: "lx-d02"
         set(v) = sp.edit().putString("profile", v).apply()
+    /** Last picture style and action used in the Export dialog; the long-press quick export repeats them. */
+    var exportStyle: String
+        get() = sp.getString("exportStyle", "Gray") ?: "Gray"
+        set(v) = sp.edit().putString("exportStyle", v).apply()
+    var exportShare: Boolean
+        get() = sp.getBoolean("exportShare", false)
+        set(v) = sp.edit().putBoolean("exportShare", v).apply()
     var gridView: Boolean
         get() = sp.getBoolean("gridView", false)
         set(v) = sp.edit().putBoolean("gridView", v).apply()

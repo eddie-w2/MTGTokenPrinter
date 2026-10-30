@@ -547,11 +547,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** The art (or whole card) for the open print dialog, downloaded once and kept while the dialog is open. */
-    private suspend fun sourceFor(cur: PrintUi, o: Opts): Bitmap {
-        val url = if (o.fullCard) cur.art.cardUrl else cur.art.artUrl
+    private suspend fun bitmapFor(art: TokenArt, o: Opts): Bitmap {
+        val url = if (o.fullCard) art.cardUrl else art.artUrl
         src?.takeIf { it.first == url }?.let { return it.second }
         return withContext(Dispatchers.IO) { Raster.fetchBitmap(url) }.also { src = url to it }
     }
+
+    private suspend fun sourceFor(cur: PrintUi, o: Opts): Bitmap = bitmapFor(cur.art, o)
 
     private fun render() {
         val cur = printUi.value ?: return
@@ -576,25 +578,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val exportBusy = MutableStateFlow(false)
 
-    /** Draws the open token (same caption, font, badge and contrast as the print) and writes it as a JPEG in the cache. */
-    private suspend fun exportFile(style: ExportStyle): File = withContext(Dispatchers.Default) {
+    /** Draws a token (same caption, font, badge and contrast as the print) and writes it as a JPEG in the cache. */
+    private suspend fun exportFile(token: Token, art: TokenArt, goblin: Int, style: ExportStyle): File =
+        withContext(Dispatchers.Default) {
+            val o = opts.value
+            val bmp = bitmapFor(art, o)
+            val out = TokenExport.draw(
+                src = bmp,
+                caption = captionFor(token, art, o),
+                captionStyle = captionStyle(o),
+                badge = if (goblin > 0) "${goblin}x" else null,
+                o = o,
+                profile = profile.value,
+                style = style,
+            )
+            val dir = File(ctx.cacheDir, "exports").apply { mkdirs() }
+            dir.listFiles()?.forEach { it.delete() } // only the latest export is kept
+            val f = File(dir, TokenExport.fileName(token.name, style))
+            f.outputStream().use { TokenExport.writeJpeg(out, it) }
+            f
+        }
+
+    /** The token open in the print screen. */
+    private suspend fun exportCurrent(style: ExportStyle): File {
         val cur = printUi.value ?: throw IllegalStateException("Nothing to export")
-        val o = opts.value
-        val bmp = sourceFor(cur, o)
-        val out = TokenExport.draw(
-            src = bmp,
-            caption = captionFor(cur.token, cur.art, o),
-            captionStyle = captionStyle(o),
-            badge = if (cur.goblin > 0) "${cur.goblin}x" else null,
-            o = o,
-            profile = profile.value,
-            style = style,
-        )
-        val dir = File(ctx.cacheDir, "exports").apply { mkdirs() }
-        dir.listFiles()?.forEach { it.delete() } // only the latest export is kept
-        val f = File(dir, TokenExport.fileName(cur.token.name, style))
-        f.outputStream().use { TokenExport.writeJpeg(out, it) }
-        f
+        return exportFile(cur.token, cur.art, cur.goblin, style)
     }
 
     private fun runExport(block: suspend () -> Unit) {
@@ -614,14 +622,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Saves to the phone's Pictures/Token Printer folder (Android 10 and newer). */
     fun saveExport(style: ExportStyle) = runExport {
-        val f = exportFile(style)
+        val f = exportCurrent(style)
         withContext(Dispatchers.IO) { TokenExport.saveToPictures(ctx, f) }
         notice.value = "Saved to Pictures/Token Printer"
     }
 
     /** Writes the export to a file the user picked (used on Android 8 and 9, which have no shared Pictures API). */
     fun writeExport(style: ExportStyle, uri: Uri) = runExport {
-        val f = exportFile(style)
+        val f = exportCurrent(style)
         withContext(Dispatchers.IO) {
             ctx.contentResolver.openOutputStream(uri)?.use { out -> f.inputStream().use { it.copyTo(out) } }
                 ?: throw IllegalStateException("Couldn't open the file")
@@ -631,8 +639,32 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Builds the export and hands back a shareable link to it, for sending straight to another printer's app. */
     fun shareExport(style: ExportStyle, onReady: (Uri) -> Unit) = runExport {
-        val f = exportFile(style)
+        val f = exportCurrent(style)
         onReady(TokenExport.shareUri(ctx, f))
+    }
+
+    fun lastExportStyle(): ExportStyle =
+        runCatching { ExportStyle.valueOf(prefs.exportStyle) }.getOrDefault(ExportStyle.Gray)
+
+    /** Remembers what the Export dialog was last used for, so the long-press quick export can repeat it. */
+    fun rememberExport(style: ExportStyle, share: Boolean) {
+        prefs.exportStyle = style.name
+        prefs.exportShare = share
+    }
+
+    /**
+     * Long-press export: the last style and action used in the Export dialog (save to Pictures to begin with).
+     * Android 8 and 9 can't save without asking where, so they open the share sheet instead.
+     */
+    fun quickExport(token: Token, art: TokenArt, onShare: (Uri) -> Unit) = runExport {
+        val style = lastExportStyle()
+        val f = exportFile(token, art, 0, style)
+        if (prefs.exportShare || !TokenExport.canSaveToPictures) {
+            onShare(TokenExport.shareUri(ctx, f))
+        } else {
+            withContext(Dispatchers.IO) { TokenExport.saveToPictures(ctx, f) }
+            notice.value = "Saved to Pictures/Token Printer"
+        }
     }
 
     fun exportName(style: ExportStyle): String = TokenExport.fileName(printUi.value?.token?.name ?: "token", style)
@@ -644,6 +676,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun printCurrent() {
         val ui = printUi.value ?: return
         printJobs(listOf(PrintJob(ui.token, ui.art, copies.value, if (ui.goblin > 0) "${ui.goblin}x" else null)))
+    }
+
+    /** Long-press print: one print with the current settings ([qty] copies, which is the deck's count in a deck). */
+    fun quickPrint(token: Token, art: TokenArt, qty: Int) {
+        if (printRun.value?.finished == false) {
+            notice.value = "Wait for the current print to finish"
+            return
+        }
+        printJobs(listOf(PrintJob(token, art, qty.coerceIn(1, 20))))
     }
 
     fun printDeck(deckId: String) {

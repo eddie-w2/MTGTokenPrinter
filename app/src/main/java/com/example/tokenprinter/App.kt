@@ -4,7 +4,14 @@ package com.example.tokenprinter
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import android.net.Uri
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -30,13 +37,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -77,17 +89,41 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
             showImport = true
         }
     }
-    when {
-        sel != null -> TokenDetailScreen(vm, sel, onBack = { vm.selected.value = null })
-        deck != null -> DeckDetailScreen(vm, deck, withBle, onBack = { vm.selectedDeckId.value = null })
-        else -> MainShell(
-            vm = vm,
-            tab = tab,
-            onTab = { tab = it },
-            onPrinter = { showPrinter = true },
-            onImport = { showImport = true },
-            withBle = withBle,
+
+    // Long press on a token: print or export it straight away with the last used settings.
+    val ble by rememberUpdatedState(withBle)
+    val quick = remember(vm) {
+        QuickPressController(
+            onPrint = { t, a, q -> ble { vm.quickPrint(t, a, q) } },
+            onExport = { t, a -> vm.quickExport(t, a) { uri: Uri -> ctx.startActivity(TokenExport.shareIntent(uri)) } },
         )
+    }
+    val density = LocalDensity.current
+    val bars = WindowInsets.systemBars
+    quick.safeTop = bars.getTop(density).toFloat()
+    quick.safeBottom = bars.getBottom(density).toFloat()
+    val blurRadius by animateDpAsState(if (quick.active?.open == true) 12.dp else 0.dp, tween(220), label = "quickBlur")
+
+    CompositionLocalProvider(LocalQuickPress provides quick) {
+        Box(Modifier.fillMaxSize().onSizeChanged { quick.rootSize = it }) {
+            // The blur only exists on Android 12 and newer; older phones just get the dimming.
+            Box(Modifier.fillMaxSize().then(if (blurRadius > 0.dp) Modifier.blur(blurRadius) else Modifier)) {
+                when {
+                    sel != null -> TokenDetailScreen(vm, sel, onBack = { vm.selected.value = null })
+                    deck != null -> DeckDetailScreen(vm, deck, withBle, onBack = { vm.selectedDeckId.value = null })
+                    else -> MainShell(
+                        vm = vm,
+                        tab = tab,
+                        onTab = { tab = it },
+                        onPrinter = { showPrinter = true },
+                        onImport = { showImport = true },
+                        withBle = withBle,
+                    )
+                }
+            }
+            QuickPressLayer(quick)
+            printUi?.let { PrintDialog(vm, it, withBle) }
+        }
     }
 
     if (showPrinter) PrinterDialog(vm, withBle, onClose = { showPrinter = false })
@@ -103,7 +139,6 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
         )
     }
     editor?.let { CustomTokenEditor(vm, it, onClose = { vm.closeEditor() }) }
-    printUi?.let { PrintDialog(vm, it, withBle) }
     printRun?.let { PrintRunDialog(it, onDismiss = { vm.dismissRun() }, onCancel = { vm.cancelRun() }) }
 }
 

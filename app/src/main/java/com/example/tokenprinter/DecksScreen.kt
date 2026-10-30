@@ -206,51 +206,11 @@ fun DeckDetailScreen(vm: MainViewModel, deck: Deck, withBle: (() -> Unit) -> Uni
                     val token = map[e.tokenKey]
                     if (token != null) {
                         val art = token.arts.firstOrNull { it.id == e.artId } ?: token.thumbArt(favArts)
-                        Card(
-                            onClick = { vm.openPrint(token, art) },
-                            shape = MaterialTheme.shapes.medium,
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                        ) {
-                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.Top) {
-                                TokenThumb(art.artUrl, Modifier.size(width = 92.dp, height = 67.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(token.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    KeywordLine(token)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        ColorPips(token.colors)
-                                        Text(
-                                            token.subtitle,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    }
-                                    if (e.sources.isNotEmpty()) {
-                                        Text(
-                                            "From " + e.sources.joinToString(", "),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Stepper(e.qty, { vm.setEntryQty(deck.id, e.tokenKey, it) })
-                                        Spacer(Modifier.weight(1f))
-                                        if (token.arts.size > 1) {
-                                            IconButton(onClick = { pickFor = e }) {
-                                                Icon(Icons.Filled.Style, contentDescription = "Change art")
-                                            }
-                                        }
-                                        IconButton(onClick = { vm.removeEntry(deck.id, e.tokenKey) }) {
-                                            Icon(Icons.Filled.Delete, contentDescription = "Remove from deck")
-                                        }
-                                    }
-                                }
+                        Box(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                            val card: @Composable (Modifier) -> Unit = { m ->
+                                DeckEntryCard(vm, deck, e, token, art, onChangeArt = { pickFor = e }, modifier = m)
                             }
+                            card(Modifier.fillMaxWidth().quickPress(token, art, e.qty, card))
                         }
                     }
                 }
@@ -280,6 +240,64 @@ fun DeckDetailScreen(vm: MainViewModel, deck: Deck, withBle: (() -> Unit) -> Uni
                 onPick = { vm.setEntryArt(deck.id, entry.tokenKey, it.id); pickFor = null },
                 onDismiss = { pickFor = null },
             )
+        }
+    }
+}
+
+@Composable
+private fun DeckEntryCard(
+    vm: MainViewModel,
+    deck: Deck,
+    e: DeckEntry,
+    token: Token,
+    art: TokenArt,
+    onChangeArt: () -> Unit,
+    modifier: Modifier,
+) {
+    Card(
+        onClick = { vm.openPrint(token, art) },
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = modifier,
+    ) {
+        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.Top) {
+            TokenThumb(art.artUrl, Modifier.size(width = 92.dp, height = 67.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(token.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KeywordLine(token)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ColorPips(token.colors)
+                    Text(
+                        token.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (e.sources.isNotEmpty()) {
+                    Text(
+                        "From " + e.sources.joinToString(", "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Stepper(e.qty, { vm.setEntryQty(deck.id, e.tokenKey, it) })
+                    Spacer(Modifier.weight(1f))
+                    if (token.arts.size > 1) {
+                        IconButton(onClick = onChangeArt) {
+                            Icon(Icons.Filled.Style, contentDescription = "Change art")
+                        }
+                    }
+                    IconButton(onClick = { vm.removeEntry(deck.id, e.tokenKey) }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Remove from deck")
+                    }
+                }
+            }
         }
     }
 }

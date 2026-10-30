@@ -178,13 +178,13 @@ fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
                 if (pinned.isNotEmpty()) {
                     item(key = "h-fav", span = { GridItemSpan(maxLineSpan) }) { SectionHeader("Favorites", pinned.size) }
                     items(pinned, key = { "f-" + it.key }) { t ->
-                        TokenGridCard(t, t.key in favs, t.thumbArt(favArts).artUrl, t.favArtCount(favArts),
+                        TokenGridCard(t, t.key in favs, t.thumbArt(favArts), t.favArtCount(favArts),
                             { vm.selected.value = t }, { vm.toggleFavorite(t.key) })
                     }
                     item(key = "h-all", span = { GridItemSpan(maxLineSpan) }) { SectionHeader("All tokens", rest.size) }
                 }
                 items(rest, key = { it.key }) { t ->
-                    TokenGridCard(t, false, t.thumbArt(favArts).artUrl, 0,
+                    TokenGridCard(t, false, t.thumbArt(favArts), 0,
                         { vm.selected.value = t }, { vm.toggleFavorite(t.key) })
                 }
             }
@@ -193,13 +193,13 @@ fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
                 if (pinned.isNotEmpty()) {
                     item(key = "h-fav") { SectionHeader("Favorites", pinned.size) }
                     items(pinned, key = { "f-" + it.key }) { t ->
-                        TokenRow(t, t.key in favs, t.thumbArt(favArts).artUrl, t.favArtCount(favArts),
+                        TokenRow(t, t.key in favs, t.thumbArt(favArts), t.favArtCount(favArts),
                             { vm.selected.value = t }, { vm.toggleFavorite(t.key) })
                     }
                     item(key = "h-all") { SectionHeader("All tokens", rest.size) }
                 }
                 items(rest, key = { it.key }) { t ->
-                    TokenRow(t, false, t.thumbArt(favArts).artUrl, 0,
+                    TokenRow(t, false, t.thumbArt(favArts), 0,
                         { vm.selected.value = t }, { vm.toggleFavorite(t.key) })
                 }
             }
@@ -211,16 +211,32 @@ fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
 private fun TokenRow(
     t: Token,
     fav: Boolean,
+    art: TokenArt,
+    favPrintings: Int,
+    onClick: () -> Unit,
+    onFav: () -> Unit,
+) {
+    Box(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+        val card: @Composable (Modifier) -> Unit = { m -> TokenRowCard(t, fav, art.artUrl, favPrintings, onClick, onFav, m) }
+        card(Modifier.fillMaxWidth().quickPress(t, art, 1, card))
+    }
+}
+
+@Composable
+private fun TokenRowCard(
+    t: Token,
+    fav: Boolean,
     thumbUrl: String,
     favPrintings: Int,
     onClick: () -> Unit,
     onFav: () -> Unit,
+    modifier: Modifier,
 ) {
     Card(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        modifier = modifier,
     ) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             TokenThumb(thumbUrl, Modifier.size(width = 92.dp, height = 67.dp))
@@ -255,15 +271,30 @@ private fun TokenRow(
 private fun TokenGridCard(
     t: Token,
     fav: Boolean,
+    art: TokenArt,
+    favPrintings: Int,
+    onClick: () -> Unit,
+    onFav: () -> Unit,
+) {
+    val card: @Composable (Modifier) -> Unit = { m -> TokenGridCardBody(t, fav, art.artUrl, favPrintings, onClick, onFav, m) }
+    card(Modifier.quickPress(t, art, 1, card))
+}
+
+@Composable
+private fun TokenGridCardBody(
+    t: Token,
+    fav: Boolean,
     thumbUrl: String,
     favPrintings: Int,
     onClick: () -> Unit,
     onFav: () -> Unit,
+    modifier: Modifier,
 ) {
     Card(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = modifier,
     ) {
         Box {
             TokenThumb(thumbUrl, Modifier.fillMaxWidth().aspectRatio(1.37f), RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
