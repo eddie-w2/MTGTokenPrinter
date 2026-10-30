@@ -82,8 +82,8 @@ private val AppShapes = Shapes(
 )
 
 @Composable
-fun AppTheme(content: @Composable () -> Unit) {
-    val scheme = if (isSystemInDarkTheme()) DarkScheme else LightScheme
+fun AppTheme(forceDark: Boolean = false, content: @Composable () -> Unit) {
+    val scheme = if (forceDark || isSystemInDarkTheme()) DarkScheme else LightScheme
     MaterialTheme(colorScheme = scheme, shapes = AppShapes) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background, content = content)
     }

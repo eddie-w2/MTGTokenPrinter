@@ -148,6 +148,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val notice = MutableStateFlow<String?>(null)
     val pendingShare = MutableStateFlow<String?>(null)
 
+    /** Dark theme forced on from Settings (otherwise the phone's setting is followed). */
+    val forceDark = MutableStateFlow(prefs.forceDark)
+    fun setForceDark(on: Boolean) {
+        forceDark.value = on
+        prefs.forceDark = on
+    }
+
+    /** The welcome pop-up. Hidden for the session by "Not now", for good by "Don't show this again". */
+    val welcomeVisible = MutableStateFlow(!prefs.welcomeDone)
+    fun dismissWelcome(forever: Boolean) {
+        welcomeVisible.value = false
+        if (forever) prefs.welcomeDone = true
+    }
+    fun showWelcome() {
+        welcomeVisible.value = true
+    }
+
     val printUi = MutableStateFlow<PrintUi?>(null)
     val copies = MutableStateFlow(1)
     val printRun = MutableStateFlow<PrintRun?>(null)

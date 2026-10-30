@@ -103,10 +103,12 @@ private fun IconOption(icon: AppIcon, selected: Boolean, onClick: () -> Unit, mo
 fun SettingsTab(
     vm: MainViewModel,
     onPrinter: () -> Unit,
+    onFaq: () -> Unit,
     withBle: (() -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val o by vm.opts.collectAsStateWithLifecycle()
+    val forceDark by vm.forceDark.collectAsStateWithLifecycle()
     val lastSync by vm.lastSync.collectAsStateWithLifecycle()
     val tokens by vm.tokens.collectAsStateWithLifecycle()
     val loading by vm.loading.collectAsStateWithLifecycle()
@@ -124,6 +126,15 @@ fun SettingsTab(
         if (uri != null) vm.importBackup(uri)
     }
     var icon by remember { mutableStateOf(AppIcons.current(ctx)) }
+    // Read from the installed app, so it always matches the build (it used to be typed in by hand and went stale).
+    val version = remember {
+        try {
+            @Suppress("DEPRECATION")
+            ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+    }
     var showFontLicenses by remember { mutableStateOf(false) }
     if (showFontLicenses) {
         val text = remember {
@@ -185,7 +196,19 @@ fun SettingsTab(
             )
         }
 
-        SettingsCard("App icon") {
+        SettingsCard("Help") {
+            Text(
+                "New here? The FAQ walks through finding tokens, connecting a printer, printing, decks, custom tokens and exporting images.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onFaq) { Text("Open the FAQ") }
+                OutlinedButton(onClick = { vm.showWelcome() }) { Text("Welcome guide") }
+            }
+        }
+
+        SettingsCard("Appearance") {
+            Text("App icon", style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AppIcon.values().forEach { opt ->
                     IconOption(opt, selected = icon == opt, onClick = {
@@ -202,6 +225,12 @@ fun SettingsTab(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            ToggleRow(
+                "Dark mode",
+                forceDark,
+                "Always use the dark look, even when your phone is set to light. The app looks best in dark mode. " +
+                    "When this is off, the app follows your phone.",
+            ) { vm.setForceDark(it) }
         }
 
         SettingsCard("Caption text") { CaptionControls(o) { vm.setOpts(it) } }
@@ -289,7 +318,7 @@ fun SettingsTab(
         }
 
         Text(
-            "Token Printer 0.6 · Card data and images from Scryfall",
+            "Token Printer $version · Card data and images from Scryfall",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),

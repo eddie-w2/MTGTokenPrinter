@@ -2,16 +2,22 @@ package com.example.tokenprinter
 
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
@@ -49,7 +55,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AppTheme { App(vm, ::withBle) }
+            val forceDark by vm.forceDark.collectAsStateWithLifecycle()
+            val dark = forceDark || isSystemInDarkTheme()
+            // The status and navigation bar icons follow the app's theme, not just the phone's.
+            DisposableEffect(dark) {
+                val bars = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
+                else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
+                onDispose { }
+            }
+            AppTheme(forceDark = forceDark) { App(vm, ::withBle) }
         }
         if (savedInstanceState == null) handleShare(intent)
     }

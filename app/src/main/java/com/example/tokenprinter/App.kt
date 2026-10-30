@@ -70,12 +70,15 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
     var tab by rememberSaveable { mutableStateOf(0) }
     var showPrinter by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
+    var showFaq by rememberSaveable { mutableStateOf(false) }
+    val welcome by vm.welcomeVisible.collectAsStateWithLifecycle()
 
     val deck = decks.firstOrNull { it.id == deckId }
     // Look the token up again so the detail screen sees new or deleted custom art straight away.
     val sel = selected?.let { tokenMap[it.key] }
     BackHandler(enabled = sel != null) { vm.selected.value = null }
     BackHandler(enabled = sel == null && deck != null) { vm.selectedDeckId.value = null }
+    BackHandler(enabled = showFaq) { showFaq = false }
 
     LaunchedEffect(notice) {
         notice?.let {
@@ -109,6 +112,7 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
             // The blur only exists on Android 12 and newer; older phones just get the dimming.
             Box(Modifier.fillMaxSize().then(if (blurRadius > 0.dp) Modifier.blur(blurRadius) else Modifier)) {
                 when {
+                    showFaq -> FaqScreen(vm, onBack = { showFaq = false })
                     sel != null -> TokenDetailScreen(vm, sel, onBack = { vm.selected.value = null })
                     deck != null -> DeckDetailScreen(vm, deck, withBle, onBack = { vm.selectedDeckId.value = null })
                     else -> MainShell(
@@ -117,6 +121,7 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
                         onTab = { tab = it },
                         onPrinter = { showPrinter = true },
                         onImport = { showImport = true },
+                        onFaq = { showFaq = true },
                         withBle = withBle,
                     )
                 }
@@ -126,6 +131,7 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
         }
     }
 
+    if (welcome && shared == null) WelcomeDialog(vm, onFaq = { showFaq = true })
     if (showPrinter) PrinterDialog(vm, withBle, onClose = { showPrinter = false })
     if (showImport) {
         ImportDeckDialog(
@@ -151,6 +157,7 @@ private fun MainShell(
     onTab: (Int) -> Unit,
     onPrinter: () -> Unit,
     onImport: () -> Unit,
+    onFaq: () -> Unit,
     withBle: (() -> Unit) -> Unit,
 ) {
     val link by vm.printer.link.collectAsStateWithLifecycle()
@@ -247,7 +254,7 @@ private fun MainShell(
         when (tab) {
             0 -> TokensTab(vm, Modifier.padding(pad))
             1 -> DecksTab(vm, onImport, Modifier.padding(pad))
-            else -> SettingsTab(vm, onPrinter, withBle, Modifier.padding(pad))
+            else -> SettingsTab(vm, onPrinter, onFaq, withBle, Modifier.padding(pad))
         }
     }
 

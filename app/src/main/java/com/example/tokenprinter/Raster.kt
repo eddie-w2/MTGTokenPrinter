@@ -137,13 +137,16 @@ object Raster {
             }
             StaticLayout.Builder.obtain(cap, 0, cap.length, tp, width - 2 * padX)
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                .setLineSpacing(0f, style.lineSpacing)
                 .setMaxLines(14)
                 .setEllipsize(TextUtils.TruncateAt.END)
                 .build()
         } else null
 
-        val capH = if (layout != null) layout.height + 2 * padY else 0
+        // Line spacing is applied by moving each finished line (see lineShifts), not by Android's own multiplier,
+        // which spaces lines unevenly when the text mixes sizes.
+        val shifts = if (layout != null) lineShifts(layout, style.lineSpacing) else IntArray(0)
+        val textH = if (layout != null) (layout.height + (shifts.lastOrNull() ?: 0)).coerceAtLeast(1) else 0
+        val capH = if (layout != null) textH + 2 * padY else 0
         var total = imgH + capH + feed
         val rpp = rowsPerPacket.coerceAtLeast(1)
         if (total % rpp != 0) total += rpp - total % rpp
@@ -157,17 +160,13 @@ object Raster {
         if (!idMark.isNullOrEmpty()) marks.add(drawIdMark(canvas, idMark, width, imgH))
         if (layout != null) {
             if (style.family == "scratch") {
-                val capBmp = Bitmap.createBitmap(width, layout.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+                val capBmp = Bitmap.createBitmap(width, textH, Bitmap.Config.ARGB_8888)
                 val cc = Canvas(capBmp)
                 cc.drawColor(Color.WHITE)
-                cc.translate(padX.toFloat(), 0f)
-                layout.draw(cc)
+                drawCaption(cc, layout, shifts, padX.toFloat(), 0f, width)
                 canvas.drawBitmap(roughen(capBmp, k), 0f, (imgH + padY).toFloat(), null)
             } else {
-                canvas.save()
-                canvas.translate(padX.toFloat(), (imgH + padY).toFloat())
-                layout.draw(canvas)
-                canvas.restore()
+                drawCaption(canvas, layout, shifts, padX.toFloat(), (imgH + padY).toFloat(), width)
             }
         }
         return Page(page, if (layout != null) imgH else total, marks)
@@ -187,6 +186,42 @@ object Raster {
     /** The page exactly as this printer would print it (black and white dots), with no invert. */
     fun blackWhite(page: Page, contrast: Float, autoContrast: Boolean): Bitmap =
         dither(page.bitmap, contrast, false, false, page.plainFrom, autoContrast, page.marks).preview
+
+    /**
+     * How far each line moves (in pixels, cumulative) to give the caption [spacing] times its normal line gaps.
+     * Every line's distance from the one above is its own normal distance times [spacing], so mixed text sizes
+     * stay even, and 1.0 changes nothing. Below 1.0 the lines overlap a little, which is what tight text wants.
+     */
+    private fun lineShifts(layout: StaticLayout, spacing: Float): IntArray {
+        val n = layout.lineCount
+        val out = IntArray(n)
+        if (spacing == 1f) return out
+        var total = 0f
+        for (i in 1 until n) {
+            total += (layout.getLineBaseline(i) - layout.getLineBaseline(i - 1)) * (spacing - 1f)
+            out[i] = total.roundToInt()
+        }
+        return out
+    }
+
+    /** Draws the caption at ([x], [y]); with shifts, one clipped line at a time so each can sit where it belongs. */
+    private fun drawCaption(canvas: Canvas, layout: StaticLayout, shifts: IntArray, x: Float, y: Float, width: Int) {
+        if (shifts.all { it == 0 }) {
+            canvas.save()
+            canvas.translate(x, y)
+            layout.draw(canvas)
+            canvas.restore()
+            return
+        }
+        for (i in 0 until layout.lineCount) {
+            val dy = y + shifts[i]
+            canvas.save()
+            canvas.clipRect(0f, dy + layout.getLineTop(i), width.toFloat(), dy + layout.getLineBottom(i))
+            canvas.translate(x, dy)
+            layout.draw(canvas)
+            canvas.restore()
+        }
+    }
 
     private fun hash(x: Int, y: Int, s: Int): Int {
         var h = x * 374761393 + y * 668265263 + s * 1274126177.toInt()

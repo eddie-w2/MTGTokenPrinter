@@ -442,11 +442,11 @@ private fun ColumnScope.TextOptions(o: Opts, set: (Opts) -> Unit) {
     OptionGroup("Text size", "${o.capSize}") {
         StepSlider(o.capSize.toFloat(), 14f..72f, 1f) { set(o.copy(capSize = it.roundToInt())) }
     }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(Modifier.weight(1f)) {
-            OptionGroup("Line spacing", String.format(Locale.US, "%.1f", o.capLineSpacing)) {
-                StepSlider(o.capLineSpacing, 0.8f..2.0f, 0.1f) {
-                    set(o.copy(capLineSpacing = (it * 10).roundToInt() / 10f))
+            OptionGroup("Line spacing", String.format(Locale.US, "%.2f", o.capLineSpacing)) {
+                StepSlider(o.capLineSpacing, 0.4f..2.0f, 0.1f) {
+                    set(o.copy(capLineSpacing = (it * 20).roundToInt() / 20f))
                 }
             }
         }
@@ -454,6 +454,9 @@ private fun ColumnScope.TextOptions(o: Opts, set: (Opts) -> Unit) {
             Text("Single line", style = MaterialTheme.typography.labelMedium)
             Switch(checked = o.capSingleLine, onCheckedChange = { set(o.copy(capSingleLine = it)) })
         }
+    }
+    if (kotlin.math.abs(o.capLineSpacing - 1f) > 0.01f) {
+        TextButton(onClick = { set(o.copy(capLineSpacing = 1f)) }) { Text("Reset line spacing to 1.0") }
     }
     if (o.capSingleLine) Hint("Name, keywords and power/toughness run together instead of sitting on separate lines.")
     OptionGroup("Font") {

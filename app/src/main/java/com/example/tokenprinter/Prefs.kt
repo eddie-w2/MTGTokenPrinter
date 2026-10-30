@@ -69,6 +69,14 @@ class Prefs(ctx: Context) {
     var colorId: Boolean
         get() = sp.getBoolean("colorId", false)
         set(v) = sp.edit().putBoolean("colorId", v).apply()
+    /** Use the dark theme even when the phone is set to light. */
+    var forceDark: Boolean
+        get() = sp.getBoolean("forceDark", false)
+        set(v) = sp.edit().putBoolean("forceDark", v).apply()
+    /** The welcome pop-up was dismissed for good. */
+    var welcomeDone: Boolean
+        get() = sp.getBoolean("welcomeDone", false)
+        set(v) = sp.edit().putBoolean("welcomeDone", v).apply()
     var sort: String
         get() = sp.getString("sort", "NameAsc") ?: "NameAsc"
         set(v) = sp.edit().putString("sort", v).apply()
