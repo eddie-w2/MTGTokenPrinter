@@ -93,9 +93,37 @@ object Raster {
         autoContrast: Boolean = false,
         badge: String? = null,
     ): Rendered {
-        val width = profile.widthDots
-        val padY = if (trimSpace) PAD_Y_TRIMMED else PAD_Y
         val feed = if (trimSpace) profile.feedRowsTrimmed else profile.feedRows
+        val page = layoutPage(src, caption, style, profile.widthDots, profile.widthDots, trimSpace, feed, profile.rowsPerPacket, badge)
+        return dither(
+            page.bitmap, contrast, invert, lsbFirst,
+            plainFrom = page.plainFrom,
+            autoContrast = autoContrast,
+            skip = page.badgeBox,
+        )
+    }
+
+    /** The art, badge and caption drawn in full color, before any dithering. */
+    class Page(val bitmap: Bitmap, val plainFrom: Int, val badgeBox: RectF?)
+
+    /**
+     * Lays the token out on a white page [width] pixels wide. Caption size and margins are given in printer dots
+     * for a page [designWidth] dots wide and scaled up, so a larger export wraps its text the same way the print does.
+     */
+    fun layoutPage(
+        src: Bitmap,
+        caption: CharSequence?,
+        style: CaptionStyle,
+        width: Int,
+        designWidth: Int,
+        trimSpace: Boolean,
+        feed: Int,
+        rowsPerPacket: Int,
+        badge: String?,
+    ): Page {
+        val k = width.toFloat() / designWidth
+        val padX = (PAD_X * k).roundToInt()
+        val padY = ((if (trimSpace) PAD_Y_TRIMMED else PAD_Y) * k).roundToInt()
         val cap = caption?.takeIf { it.isNotBlank() }
         val imgH = (src.height * width.toFloat() / src.width).roundToInt().coerceAtLeast(1)
 
@@ -103,9 +131,9 @@ object Raster {
             val tp = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.BLACK
                 typeface = Fonts.typeface(style.family, style.bold)
-                textSize = style.sizePx.toFloat()
+                textSize = style.sizePx * k
             }
-            StaticLayout.Builder.obtain(cap, 0, cap.length, tp, width - 2 * PAD_X)
+            StaticLayout.Builder.obtain(cap, 0, cap.length, tp, width - 2 * padX)
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
                 .setMaxLines(14)
                 .setEllipsize(TextUtils.TruncateAt.END)
@@ -114,7 +142,7 @@ object Raster {
 
         val capH = if (layout != null) layout.height + 2 * padY else 0
         var total = imgH + capH + feed
-        val rpp = profile.rowsPerPacket.coerceAtLeast(1)
+        val rpp = rowsPerPacket.coerceAtLeast(1)
         if (total % rpp != 0) total += rpp - total % rpp
 
         val page = Bitmap.createBitmap(width, total, Bitmap.Config.ARGB_8888)
@@ -127,23 +155,33 @@ object Raster {
                 val capBmp = Bitmap.createBitmap(width, layout.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
                 val cc = Canvas(capBmp)
                 cc.drawColor(Color.WHITE)
-                cc.translate(PAD_X.toFloat(), 0f)
+                cc.translate(padX.toFloat(), 0f)
                 layout.draw(cc)
-                canvas.drawBitmap(roughen(capBmp), 0f, (imgH + padY).toFloat(), null)
+                canvas.drawBitmap(roughen(capBmp, k), 0f, (imgH + padY).toFloat(), null)
             } else {
                 canvas.save()
-                canvas.translate(PAD_X.toFloat(), (imgH + padY).toFloat())
+                canvas.translate(padX.toFloat(), (imgH + padY).toFloat())
                 layout.draw(canvas)
                 canvas.restore()
             }
         }
-        return dither(
-            page, contrast, invert, lsbFirst,
-            plainFrom = if (layout != null) imgH else total,
-            autoContrast = autoContrast,
-            skip = badgeBox,
-        )
+        return Page(page, if (layout != null) imgH else total, badgeBox)
     }
+
+    /** The page as grey tones with the user's contrast settings applied, for printers that do their own dithering. */
+    fun grayscale(page: Page, contrast: Float, autoContrast: Boolean): Bitmap {
+        val w = page.bitmap.width
+        val h = page.bitmap.height
+        val g = tones(page.bitmap, contrast, autoContrast, page.plainFrom, page.badgeBox)
+        val px = IntArray(w * h) { i -> val v = g[i].roundToInt().coerceIn(0, 255); Color.rgb(v, v, v) }
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        out.setPixels(px, 0, w, 0, 0, w, h)
+        return out
+    }
+
+    /** The page exactly as this printer would print it (black and white dots), with no invert. */
+    fun blackWhite(page: Page, contrast: Float, autoContrast: Boolean): Bitmap =
+        dither(page.bitmap, contrast, false, false, page.plainFrom, autoContrast, page.badgeBox).preview
 
     private fun hash(x: Int, y: Int, s: Int): Int {
         var h = x * 374761393 + y * 668265263 + s * 1274126177.toInt()
@@ -152,15 +190,17 @@ object Raster {
     }
 
     /** Gives text a jagged, scratched look: ragged edges from a blocky displacement, plus a few white scratches. */
-    private fun roughen(src: Bitmap): Bitmap {
+    private fun roughen(src: Bitmap, k: Float = 1f): Bitmap {
         val w = src.width
         val h = src.height
         val inPx = IntArray(w * h)
         src.getPixels(inPx, 0, w, 0, 0, w, h)
         val out = IntArray(w * h)
         for (y in 0 until h) for (x in 0 until w) {
-            val dx = Math.floorMod(hash(x / 3, y / 3, 1), 5) - 2
-            val dy = Math.floorMod(hash(x / 3, y / 3, 2), 5) - 2
+            val cx = (x / (3 * k)).toInt()
+            val cy = (y / (3 * k)).toInt()
+            val dx = ((Math.floorMod(hash(cx, cy, 1), 5) - 2) * k).roundToInt()
+            val dy = ((Math.floorMod(hash(cx, cy, 2), 5) - 2) * k).roundToInt()
             out[y * w + x] = inPx[(y + dy).coerceIn(0, h - 1) * w + (x + dx).coerceIn(0, w - 1)]
         }
         // createBitmap(pixels, ...) gives a read-only bitmap, so make an editable one and copy the pixels in.
@@ -168,11 +208,11 @@ object Raster {
         bmp.setPixels(out, 0, w, 0, 0, w, h)
         val c = Canvas(bmp)
         val rnd = java.util.Random(7)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeWidth = 2f; strokeCap = Paint.Cap.ROUND }
-        repeat((w * h / 900).coerceAtLeast(6)) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeWidth = 2f * k; strokeCap = Paint.Cap.ROUND }
+        repeat((w * h / (900 * k * k)).toInt().coerceAtLeast(6)) {
             val x = rnd.nextFloat() * w
             val y = rnd.nextFloat() * h
-            val len = 8f + rnd.nextFloat() * 26f
+            val len = (8f + rnd.nextFloat() * 26f) * k
             val ang = (-0.9 + rnd.nextFloat() * 1.8).toFloat() // mostly diagonal strokes
             c.drawLine(x, y, x + len * kotlin.math.cos(ang), y + len * kotlin.math.sin(ang), paint)
         }
@@ -247,6 +287,24 @@ object Raster {
         }
     }
 
+    /** Grey level (0 black .. 255 white) of every pixel, after auto contrast and the contrast slider. */
+    private fun tones(bmp: Bitmap, contrast: Float, autoContrast: Boolean, plainFrom: Int, skip: RectF?): FloatArray {
+        val w = bmp.width
+        val h = bmp.height
+        val px = IntArray(w * h)
+        bmp.getPixels(px, 0, w, 0, 0, w, h)
+        val g = FloatArray(w * h)
+        for (i in px.indices) {
+            val c = px[i]
+            val a = (c ushr 24) / 255f
+            val lum = 0.299f * Color.red(c) + 0.587f * Color.green(c) + 0.114f * Color.blue(c)
+            g[i] = lum * a + 255f * (1f - a)
+        }
+        if (autoContrast) autoLevels(g, w, w * minOf(plainFrom, h), skip)
+        for (i in g.indices) g[i] = ((g[i] - 128f) * contrast + 128f).coerceIn(0f, 255f)
+        return g
+    }
+
     /**
      * Floyd-Steinberg dithering for the picture, plain thresholding for the caption so text stays crisp.
      * A set bit means "burn this dot" unless [invert] is on.
@@ -263,17 +321,7 @@ object Raster {
         val w = bmp.width
         val h = bmp.height
         val rowBytes = w / 8
-        val px = IntArray(w * h)
-        bmp.getPixels(px, 0, w, 0, 0, w, h)
-        val g = FloatArray(w * h)
-        for (i in px.indices) {
-            val c = px[i]
-            val a = (c ushr 24) / 255f
-            val lum = 0.299f * Color.red(c) + 0.587f * Color.green(c) + 0.114f * Color.blue(c)
-            g[i] = lum * a + 255f * (1f - a)
-        }
-        if (autoContrast) autoLevels(g, w, w * minOf(plainFrom, h), skip)
-        for (i in g.indices) g[i] = ((g[i] - 128f) * contrast + 128f).coerceIn(0f, 255f)
+        val g = tones(bmp, contrast, autoContrast, plainFrom, skip)
 
         val bits = ByteArray(h * rowBytes)
         val shown = IntArray(w * h)

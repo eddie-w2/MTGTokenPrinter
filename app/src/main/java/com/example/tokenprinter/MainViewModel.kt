@@ -513,6 +513,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         render()
     }
 
+    /** Goblin Mode quantity: 0 turns it off. */
+    fun setGoblin(n: Int) {
+        val cur = printUi.value ?: return
+        if (cur.goblin == n) return
+        printUi.value = cur.copy(goblin = n)
+        render()
+    }
+
     fun closePrint() {
         renderJob?.cancel()
         printUi.value = null
@@ -538,6 +546,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         render()
     }
 
+    /** The art (or whole card) for the open print dialog, downloaded once and kept while the dialog is open. */
+    private suspend fun sourceFor(cur: PrintUi, o: Opts): Bitmap {
+        val url = if (o.fullCard) cur.art.cardUrl else cur.art.artUrl
+        src?.takeIf { it.first == url }?.let { return it.second }
+        return withContext(Dispatchers.IO) { Raster.fetchBitmap(url) }.also { src = url to it }
+    }
+
     private fun render() {
         val cur = printUi.value ?: return
         val o = opts.value
@@ -545,9 +560,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         renderJob = viewModelScope.launch(Dispatchers.Default) {
             delay(60) // debounce slider drags
             try {
-                val url = if (o.fullCard) cur.art.cardUrl else cur.art.artUrl
-                val bmp = src?.takeIf { it.first == url }?.second
-                    ?: withContext(Dispatchers.IO) { Raster.fetchBitmap(url) }.also { src = url to it }
+                val bmp = sourceFor(cur, o)
                 val r = renderImage(bmp, captionFor(cur.token, cur.art, o), o, if (cur.goblin > 0) "${cur.goblin}x" else null)
                 rendered = r
                 printUi.update { it?.copy(preview = r.preview, message = "") }
@@ -558,6 +571,71 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    // ---------------------------------------------------------- image export
+
+    val exportBusy = MutableStateFlow(false)
+
+    /** Draws the open token (same caption, font, badge and contrast as the print) and writes it as a JPEG in the cache. */
+    private suspend fun exportFile(style: ExportStyle): File = withContext(Dispatchers.Default) {
+        val cur = printUi.value ?: throw IllegalStateException("Nothing to export")
+        val o = opts.value
+        val bmp = sourceFor(cur, o)
+        val out = TokenExport.draw(
+            src = bmp,
+            caption = captionFor(cur.token, cur.art, o),
+            captionStyle = captionStyle(o),
+            badge = if (cur.goblin > 0) "${cur.goblin}x" else null,
+            o = o,
+            profile = profile.value,
+            style = style,
+        )
+        val dir = File(ctx.cacheDir, "exports").apply { mkdirs() }
+        dir.listFiles()?.forEach { it.delete() } // only the latest export is kept
+        val f = File(dir, TokenExport.fileName(cur.token.name, style))
+        f.outputStream().use { TokenExport.writeJpeg(out, it) }
+        f
+    }
+
+    private fun runExport(block: suspend () -> Unit) {
+        if (exportBusy.value) return
+        viewModelScope.launch {
+            exportBusy.value = true
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                notice.value = "Export failed: ${e.message ?: e.javaClass.simpleName}"
+            }
+            exportBusy.value = false
+        }
+    }
+
+    /** Saves to the phone's Pictures/Token Printer folder (Android 10 and newer). */
+    fun saveExport(style: ExportStyle) = runExport {
+        val f = exportFile(style)
+        withContext(Dispatchers.IO) { TokenExport.saveToPictures(ctx, f) }
+        notice.value = "Saved to Pictures/Token Printer"
+    }
+
+    /** Writes the export to a file the user picked (used on Android 8 and 9, which have no shared Pictures API). */
+    fun writeExport(style: ExportStyle, uri: Uri) = runExport {
+        val f = exportFile(style)
+        withContext(Dispatchers.IO) {
+            ctx.contentResolver.openOutputStream(uri)?.use { out -> f.inputStream().use { it.copyTo(out) } }
+                ?: throw IllegalStateException("Couldn't open the file")
+        }
+        notice.value = "Image saved"
+    }
+
+    /** Builds the export and hands back a shareable link to it, for sending straight to another printer's app. */
+    fun shareExport(style: ExportStyle, onReady: (Uri) -> Unit) = runExport {
+        val f = exportFile(style)
+        onReady(TokenExport.shareUri(ctx, f))
+    }
+
+    fun exportName(style: ExportStyle): String = TokenExport.fileName(printUi.value?.token?.name ?: "token", style)
 
     // ------------------------------------------------------------ printing
 

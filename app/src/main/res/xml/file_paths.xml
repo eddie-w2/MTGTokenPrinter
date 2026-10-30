@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Folders other apps may read through a share link. Only exported token images. -->
+<paths>
+    <cache-path name="exports" path="exports/" />
+</paths>

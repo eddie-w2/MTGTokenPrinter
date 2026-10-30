@@ -3,6 +3,7 @@
 package com.example.tokenprinter
 
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -15,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -36,13 +38,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -56,15 +55,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 // ================================================================= tokens tab
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
     val list by vm.visible.collectAsStateWithLifecycle()
@@ -82,6 +83,21 @@ fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
     val progress by vm.progress.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val grid by vm.gridView.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+
+    // Back to the top whenever the search or filters change. This waits for the new results to arrive:
+    // jumping earlier would be undone, because the list keeps its place by item and the old item may still
+    // be in the new results. Kept across screens, so opening a token and coming back doesn't jump.
+    var scrolledFor by rememberSaveable { mutableIntStateOf(filters.hashCode()) }
+    LaunchedEffect(list) {
+        val h = filters.hashCode()
+        if (h != scrolledFor) {
+            scrolledFor = h
+            listState.requestScrollToItem(0)
+            gridState.requestScrollToItem(0)
+        }
+    }
 
     Column(modifier.fillMaxSize()) {
         OutlinedTextField(
@@ -153,6 +169,7 @@ fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
         if (grid) {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(150.dp),
+                state = gridState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 96.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -172,7 +189,7 @@ fun TokensTab(vm: MainViewModel, modifier: Modifier = Modifier) {
                 }
             }
         } else {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
+            LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 96.dp)) {
                 if (pinned.isNotEmpty()) {
                     item(key = "h-fav") { SectionHeader("Favorites", pinned.size) }
                     items(pinned, key = { "f-" + it.key }) { t ->
@@ -393,85 +410,6 @@ fun TokenDetailScreen(vm: MainViewModel, token: Token, onBack: () -> Unit) {
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } },
         )
     }
-}
-
-// =============================================================== print dialog
-
-@Composable
-fun PrintDialog(vm: MainViewModel, ui: PrintUi, withBle: (() -> Unit) -> Unit) {
-    val o by vm.opts.collectAsStateWithLifecycle()
-    val copies by vm.copies.collectAsStateWithLifecycle()
-    val favArts by vm.favArts.collectAsStateWithLifecycle()
-    val run by vm.printRun.collectAsStateWithLifecycle()
-    var addToDeck by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = { vm.closePrint() },
-        title = { Text(ui.token.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    Modifier.fillMaxWidth().heightIn(min = 120.dp).background(Color.White, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val p = ui.preview
-                    if (p == null) {
-                        CircularProgressIndicator(Modifier.padding(24.dp))
-                    } else {
-                        androidx.compose.foundation.Image(
-                            bitmap = p.asImageBitmap(),
-                            contentDescription = "Print preview",
-                            modifier = Modifier.fillMaxWidth(),
-                            contentScale = ContentScale.FillWidth,
-                        )
-                    }
-                }
-                if (ui.message.isNotEmpty()) {
-                    Text(ui.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Copies", style = MaterialTheme.typography.bodyMedium)
-                    Stepper(copies, { vm.copies.value = it }, min = 1, max = 20)
-                    Spacer(Modifier.weight(1f))
-                    OutlinedButton(
-                        onClick = { vm.cycleGoblin() },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                    ) {
-                        Text(
-                            if (ui.goblin == 0) "Goblin Mode" else "Goblin ${ui.goblin}x",
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                        )
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { addToDeck = true }) {
-                        Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Add to deck")
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Text("Favorite printing", style = MaterialTheme.typography.labelMedium)
-                    HeartButton(on = ui.art.id in favArts, onClick = { vm.toggleFavArt(ui.art.id) })
-                }
-                Expander("Text options") { CaptionControls(o) { vm.setOpts(it) } }
-                Expander("Image quality") { PrintQualityControls(o) { vm.setOpts(it) } }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { withBle { vm.printCurrent() } },
-                enabled = ui.preview != null && run == null,
-            ) {
-                Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(if (copies > 1) "Print $copies" else "Print")
-            }
-        },
-        dismissButton = { TextButton(onClick = { vm.closePrint() }) { Text("Close") } },
-    )
-
-    if (addToDeck) AddToDeckDialog(vm, ui.token, ui.art, onClose = { addToDeck = false })
 }
 
 @Composable
