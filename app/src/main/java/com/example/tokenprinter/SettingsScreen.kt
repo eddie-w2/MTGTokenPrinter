@@ -206,6 +206,14 @@ fun SettingsTab(
                 Button(onClick = onFaq) { Text("Open the FAQ") }
                 OutlinedButton(onClick = { vm.showWelcome() }) { Text("Welcome guide") }
             }
+            Text(
+                "Questions, ideas, or a printer that isn't supported yet? Get in touch.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { Contact.email(ctx) }) { Text("Contact me") }
+                OutlinedButton(onClick = { Contact.bugReport(ctx) }) { Text("Report a bug") }
+            }
         }
 
         SettingsCard("App updates") {

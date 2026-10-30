@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.8.01
+- New Contact me and Report a bug buttons in Settings > Help. The bug report email fills in your version, the date and your phone for you.
+- A clearer FAQ and welcome guide.
+- This version is also a test of the automatic updater.
+
 ## 0.8.00
 - Token Printer can now update itself. The first time you open it each day it checks for a new version, and Settings > App updates lets you check by hand or install an update you put off.
 - Dark mode switch in Settings > Appearance.
