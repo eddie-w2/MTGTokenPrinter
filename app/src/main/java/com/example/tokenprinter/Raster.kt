@@ -64,7 +64,7 @@ object Fonts {
     }
 }
 
-data class CaptionStyle(val sizePx: Int, val family: String, val bold: Boolean)
+data class CaptionStyle(val sizePx: Int, val family: String, val bold: Boolean, val lineSpacing: Float = 1f)
 
 /** Turns an image into the 1-bit raster the printer expects (width and packet rows come from the [PrinterProfile]). */
 object Raster {
@@ -92,19 +92,20 @@ object Raster {
         profile: PrinterProfile = Profiles.LX_D02,
         autoContrast: Boolean = false,
         badge: String? = null,
+        idMark: String? = null,
     ): Rendered {
         val feed = if (trimSpace) profile.feedRowsTrimmed else profile.feedRows
-        val page = layoutPage(src, caption, style, profile.widthDots, profile.widthDots, trimSpace, feed, profile.rowsPerPacket, badge)
+        val page = layoutPage(src, caption, style, profile.widthDots, profile.widthDots, trimSpace, feed, profile.rowsPerPacket, badge, idMark)
         return dither(
             page.bitmap, contrast, invert, lsbFirst,
             plainFrom = page.plainFrom,
             autoContrast = autoContrast,
-            skip = page.badgeBox,
+            skip = page.marks,
         )
     }
 
     /** The art, badge and caption drawn in full color, before any dithering. */
-    class Page(val bitmap: Bitmap, val plainFrom: Int, val badgeBox: RectF?)
+    class Page(val bitmap: Bitmap, val plainFrom: Int, val marks: List<RectF>)
 
     /**
      * Lays the token out on a white page [width] pixels wide. Caption size and margins are given in printer dots
@@ -120,6 +121,7 @@ object Raster {
         feed: Int,
         rowsPerPacket: Int,
         badge: String?,
+        idMark: String? = null,
     ): Page {
         val k = width.toFloat() / designWidth
         val padX = (PAD_X * k).roundToInt()
@@ -135,6 +137,7 @@ object Raster {
             }
             StaticLayout.Builder.obtain(cap, 0, cap.length, tp, width - 2 * padX)
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, style.lineSpacing)
                 .setMaxLines(14)
                 .setEllipsize(TextUtils.TruncateAt.END)
                 .build()
@@ -149,7 +152,9 @@ object Raster {
         val canvas = Canvas(page)
         canvas.drawColor(Color.WHITE)
         canvas.drawBitmap(src, null, Rect(0, 0, width, imgH), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
-        val badgeBox = if (!badge.isNullOrEmpty()) drawBadge(canvas, badge, width) else null
+        val marks = ArrayList<RectF>()
+        if (!badge.isNullOrEmpty()) marks.add(drawBadge(canvas, badge, width))
+        if (!idMark.isNullOrEmpty()) marks.add(drawIdMark(canvas, idMark, width, imgH))
         if (layout != null) {
             if (style.family == "scratch") {
                 val capBmp = Bitmap.createBitmap(width, layout.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
@@ -165,14 +170,14 @@ object Raster {
                 canvas.restore()
             }
         }
-        return Page(page, if (layout != null) imgH else total, badgeBox)
+        return Page(page, if (layout != null) imgH else total, marks)
     }
 
     /** The page as grey tones with the user's contrast settings applied, for printers that do their own dithering. */
     fun grayscale(page: Page, contrast: Float, autoContrast: Boolean): Bitmap {
         val w = page.bitmap.width
         val h = page.bitmap.height
-        val g = tones(page.bitmap, contrast, autoContrast, page.plainFrom, page.badgeBox)
+        val g = tones(page.bitmap, contrast, autoContrast, page.plainFrom, page.marks)
         val px = IntArray(w * h) { i -> val v = g[i].roundToInt().coerceIn(0, 255); Color.rgb(v, v, v) }
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         out.setPixels(px, 0, w, 0, 0, w, h)
@@ -181,7 +186,7 @@ object Raster {
 
     /** The page exactly as this printer would print it (black and white dots), with no invert. */
     fun blackWhite(page: Page, contrast: Float, autoContrast: Boolean): Bitmap =
-        dither(page.bitmap, contrast, false, false, page.plainFrom, autoContrast, page.badgeBox).preview
+        dither(page.bitmap, contrast, false, false, page.plainFrom, autoContrast, page.marks).preview
 
     private fun hash(x: Int, y: Int, s: Int): Int {
         var h = x * 374761393 + y * 668265263 + s * 1274126177.toInt()
@@ -251,16 +256,49 @@ object Raster {
     }
 
     /**
+     * The token's color letters (e.g. "B/R/G") in white with a heavy black outline, in the bottom left corner
+     * of the picture: the opposite corner to the Goblin Mode label.
+     */
+    private fun drawIdMark(canvas: Canvas, text: String, width: Int, imgH: Int): RectF {
+        val size = width * 0.09f
+        val outline = width * 0.009f
+        val margin = width * 0.035f
+        val face = Typeface.create("sans-serif", Typeface.BOLD)
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            typeface = face
+            textSize = size
+        }
+        val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            typeface = face
+            textSize = size
+            style = Paint.Style.STROKE
+            strokeWidth = outline * 2
+            strokeJoin = Paint.Join.ROUND
+        }
+        val fm = fill.fontMetrics
+        val tw = fill.measureText(text)
+        val x = margin + outline
+        val baseline = imgH - margin - outline - fm.descent
+        canvas.drawText(text, x, baseline, edge)
+        canvas.drawText(text, x, baseline, fill)
+        return RectF(x - outline, baseline + fm.ascent - outline, x + tw + outline, baseline + fm.descent + outline)
+    }
+
+    /**
      * Stretches the picture's tones to the full range and lifts dark images, so murky art keeps its detail.
      * [n] is the number of pixels (from the top) that belong to the picture rather than the caption.
      */
-    private fun autoLevels(g: FloatArray, w: Int, n: Int, skip: RectF?) {
+    private fun autoLevels(g: FloatArray, w: Int, n: Int, skip: List<RectF>) {
         if (n <= 0) return
         val hist = IntArray(256)
         var cnt = 0
         for (i in 0 until n) {
             // The Goblin Mode label is drawn over the art; it must not skew the tone measurement.
-            if (skip != null && (i % w).toFloat() in skip.left..skip.right && (i / w).toFloat() in skip.top..skip.bottom) continue
+            val px = (i % w).toFloat()
+            val py = (i / w).toFloat()
+            if (skip.any { px in it.left..it.right && py in it.top..it.bottom }) continue
             hist[g[i].toInt().coerceIn(0, 255)]++
             cnt++
         }
@@ -288,7 +326,7 @@ object Raster {
     }
 
     /** Grey level (0 black .. 255 white) of every pixel, after auto contrast and the contrast slider. */
-    private fun tones(bmp: Bitmap, contrast: Float, autoContrast: Boolean, plainFrom: Int, skip: RectF?): FloatArray {
+    private fun tones(bmp: Bitmap, contrast: Float, autoContrast: Boolean, plainFrom: Int, skip: List<RectF>): FloatArray {
         val w = bmp.width
         val h = bmp.height
         val px = IntArray(w * h)
@@ -316,7 +354,7 @@ object Raster {
         lsbFirst: Boolean,
         plainFrom: Int,
         autoContrast: Boolean,
-        skip: RectF? = null,
+        skip: List<RectF> = emptyList(),
     ): Rendered {
         val w = bmp.width
         val h = bmp.height

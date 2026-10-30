@@ -1,5 +1,10 @@
 package com.example.tokenprinter
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -50,6 +55,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -68,6 +74,49 @@ import kotlin.math.roundToInt
  * The finger stays on the original card the whole time, so the buttons are not touched themselves: this file
  * works out where they are and checks the finger's position against them.
  */
+
+/**
+ * Buzzes the phone's vibration motor directly. The standard Compose haptic call goes through the system's
+ * "touch feedback" setting, which many phones ship turned off, so it gave nothing on a long press. If the
+ * phone has no vibrator (or refuses), it falls back to the standard call.
+ */
+class QuickHaptics(ctx: Context, private val fallback: HapticFeedback) {
+    private val vibrator: Vibrator? = try {
+        if (Build.VERSION.SDK_INT >= 31) {
+            (ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun buzz(effect: Int, millis: Long, amplitude: Int, type: HapticFeedbackType) {
+        val v = vibrator
+        if (v == null || !v.hasVibrator()) {
+            fallback.performHapticFeedback(type)
+            return
+        }
+        try {
+            v.vibrate(
+                if (Build.VERSION.SDK_INT >= 29) VibrationEffect.createPredefined(effect)
+                else VibrationEffect.createOneShot(millis, amplitude),
+            )
+        } catch (e: Exception) {
+            fallback.performHapticFeedback(type)
+        }
+    }
+
+    /** The card lifts: a firm thump. */
+    fun lift() = buzz(VibrationEffect.EFFECT_HEAVY_CLICK, 40, 255, HapticFeedbackType.LongPress)
+
+    /** The finger moves onto or off a button: a light tick. */
+    fun tick() = buzz(VibrationEffect.EFFECT_TICK, 12, 90, HapticFeedbackType.TextHandleMove)
+
+    /** A button is chosen. */
+    fun confirm() = buzz(VibrationEffect.EFFECT_CLICK, 25, 180, HapticFeedbackType.LongPress)
+}
 
 enum class QuickAction(val label: String) { Export("Export"), Print("Print") }
 
@@ -115,7 +164,7 @@ class QuickPressController(
     var safeTop: Float = 0f
     var safeBottom: Float = 0f
 
-    private var haptic: HapticFeedback? = null
+    private var haptic: QuickHaptics? = null
 
     fun begin(
         owner: Any,
@@ -124,14 +173,14 @@ class QuickPressController(
         qty: Int,
         bounds: Rect,
         density: Density,
-        haptic: HapticFeedback,
+        haptic: QuickHaptics,
         pointer: Offset,
         content: @Composable (Modifier) -> Unit,
     ) {
         this.haptic = haptic
         val layout = computeLayout(bounds, density)
         active = QuickPress(owner, token, art, qty, bounds, layout, content).also { it.hover = layout.hit(pointer) }
-        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        haptic.lift()
     }
 
     fun move(p: Offset) {
@@ -140,7 +189,7 @@ class QuickPressController(
         val h = a.layout.hit(p)
         if (h != a.hover) {
             a.hover = h
-            if (h != null) haptic?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            if (h != null) haptic?.tick()
         }
     }
 
@@ -153,11 +202,11 @@ class QuickPressController(
         a.open = false
         when (h) {
             QuickAction.Print -> {
-                haptic?.performHapticFeedback(HapticFeedbackType.LongPress)
+                haptic?.confirm()
                 onPrint(a.token, a.art, a.qty)
             }
             QuickAction.Export -> {
-                haptic?.performHapticFeedback(HapticFeedbackType.LongPress)
+                haptic?.confirm()
                 onExport(a.token, a.art)
             }
             null -> Unit
@@ -224,7 +273,9 @@ fun Modifier.quickPress(
 ): Modifier {
     val c = LocalQuickPress.current ?: return this
     val density = LocalDensity.current
-    val haptic = LocalHapticFeedback.current
+    val ctx = LocalContext.current
+    val standardHaptic = LocalHapticFeedback.current
+    val haptic = remember(ctx, standardHaptic) { QuickHaptics(ctx, standardHaptic) }
     val timeout = LocalViewConfiguration.current.longPressTimeoutMillis
     val owner = remember { Any() }
     val holder = remember { CoordsHolder() }

@@ -60,6 +60,15 @@ class Prefs(ctx: Context) {
     var capKeywords: Boolean
         get() = sp.getBoolean("capKeywords", true)
         set(v) = sp.edit().putBoolean("capKeywords", v).apply()
+    var capLineSpacing: Float
+        get() = sp.getFloat("capLineSpacing", 1f)
+        set(v) = sp.edit().putFloat("capLineSpacing", v).apply()
+    var capSingleLine: Boolean
+        get() = sp.getBoolean("capSingleLine", false)
+        set(v) = sp.edit().putBoolean("capSingleLine", v).apply()
+    var colorId: Boolean
+        get() = sp.getBoolean("colorId", false)
+        set(v) = sp.edit().putBoolean("colorId", v).apply()
     var sort: String
         get() = sp.getString("sort", "NameAsc") ?: "NameAsc"
         set(v) = sp.edit().putString("sort", v).apply()

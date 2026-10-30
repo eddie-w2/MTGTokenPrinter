@@ -64,6 +64,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -88,8 +89,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -99,12 +102,13 @@ import kotlin.math.roundToInt
 private const val DEFAULT_CONTRAST = 1.2f
 private val GOBLIN_STEPS = listOf(0, 10, 25, 50, 100)
 
-private data class OptionTab(val label: String, val icon: ImageVector)
+private data class OptionTab(val label: String, val icon: @Composable () -> Unit)
 
 private val optionTabs = listOf(
-    OptionTab("Text", Icons.Filled.TextFields),
-    OptionTab("Image", Icons.Filled.Photo),
-    OptionTab("Goblin", Icons.Filled.Tag),
+    OptionTab("Text") { Icon(Icons.Filled.TextFields, contentDescription = null, modifier = Modifier.size(18.dp)) },
+    OptionTab("Image") { Icon(Icons.Filled.Photo, contentDescription = null, modifier = Modifier.size(18.dp)) },
+    // A plain multiplication sign: the tab sets how many tokens one print stands in for.
+    OptionTab("Stacked") { Text("×", fontSize = 24.sp, fontWeight = FontWeight.Bold) },
 )
 
 /**
@@ -343,7 +347,7 @@ private fun OptionsPanel(tab: Int, onTab: (Int) -> Unit, modifier: Modifier, con
                     selected = tab == i,
                     onClick = { onTab(i) },
                     text = { Text(t.label, maxLines = 1) },
-                    icon = { Icon(t.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    icon = { t.icon() },
                 )
             }
         }
@@ -381,9 +385,10 @@ private fun Hint(text: String) {
 
 /** An on/off chip that shows a check mark while on. */
 @Composable
-private fun ToggleChip(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
+private fun ToggleChip(label: String, on: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     FilterChip(
         selected = on,
+        enabled = enabled,
         onClick = { onChange(!on) },
         label = { Text(label) },
         leadingIcon = if (on) {
@@ -416,21 +421,41 @@ private fun ColumnScope.TextOptions(o: Opts, set: (Opts) -> Unit) {
     ToggleRow("Caption under the art", o.caption, "The token's name, plus anything you pick below.") {
         set(o.copy(caption = it))
     }
-    if (!o.caption) {
-        Hint("Turn the caption on to choose its text, size and font.")
-        return
-    }
     OptionGroup("Show") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ToggleChip("Keyword abilities", o.capKeywords) { set(o.copy(capKeywords = it)) }
-            ToggleChip("Full rules text", o.capRules) { set(o.copy(capRules = it)) }
-            ToggleChip("Power/toughness", o.capPt) { set(o.copy(capPt = it)) }
+            ToggleChip("Keyword abilities", o.capKeywords, enabled = o.caption) { set(o.copy(capKeywords = it)) }
+            ToggleChip("Full rules text", o.capRules, enabled = o.caption) { set(o.copy(capRules = it)) }
+            ToggleChip("Power/toughness", o.capPt, enabled = o.caption) { set(o.copy(capPt = it)) }
+            ToggleChip("Color identity", o.colorId) { set(o.copy(colorId = it)) }
         }
-        Hint("Full rules text replaces the keyword line. Emblems always show their rules.")
+        Hint(
+            if (o.caption) {
+                "Full rules text replaces the keyword line. Emblems always show their rules. " +
+                    "Color identity (like B/G) goes in the bottom left corner of the picture."
+            } else {
+                "Color identity (like B/G) goes in the bottom left corner of the picture. " +
+                    "Turn the caption on for the other options."
+            }
+        )
     }
+    if (!o.caption) return
     OptionGroup("Text size", "${o.capSize}") {
         StepSlider(o.capSize.toFloat(), 14f..72f, 1f) { set(o.copy(capSize = it.roundToInt())) }
     }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f)) {
+            OptionGroup("Line spacing", String.format(Locale.US, "%.1f", o.capLineSpacing)) {
+                StepSlider(o.capLineSpacing, 0.8f..2.0f, 0.1f) {
+                    set(o.copy(capLineSpacing = (it * 10).roundToInt() / 10f))
+                }
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Single line", style = MaterialTheme.typography.labelMedium)
+            Switch(checked = o.capSingleLine, onCheckedChange = { set(o.copy(capSingleLine = it)) })
+        }
+    }
+    if (o.capSingleLine) Hint("Name, keywords and power/toughness run together instead of sitting on separate lines.")
     OptionGroup("Font") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Fonts.all.forEach { f ->
@@ -475,8 +500,8 @@ private fun ImageOptions(o: Opts, set: (Opts) -> Unit) {
 
 @Composable
 private fun GoblinOptions(goblin: Int, onPick: (Int) -> Unit) {
-    OptionGroup("Goblin Mode") {
-        Hint("Writes a quantity in the corner, so one token can stand in for a whole pile.")
+    OptionGroup("Stacked") {
+        Hint("Goblin Mode: writes a quantity in the top right corner, so one token can stand in for a whole pile.")
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             GOBLIN_STEPS.forEachIndexed { i, n ->
                 SegmentedButton(

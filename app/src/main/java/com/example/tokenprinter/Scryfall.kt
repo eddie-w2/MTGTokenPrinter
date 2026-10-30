@@ -35,6 +35,13 @@ data class Token(
     val keywords: List<String> = emptyList(),
 ) {
     val keywordText: String get() = keywords.joinToString(", ")
+
+    /** Colors in WUBRG order with slashes, e.g. "B/R/G". Colorless is "C", the same letter the color filter uses. */
+    val colorMark: String
+        get() {
+            val present = "WUBRG".filter { it in colors }
+            return if (present.isEmpty()) "C" else present.toList().joinToString("/")
+        }
     val newest: String get() = arts.maxOfOrNull { it.released } ?: ""
     val oldest: String get() = arts.minOfOrNull { it.released } ?: ""
 

@@ -59,6 +59,9 @@ object Backup {
             put("capRules", opts.capRules)
             put("trimSpace", opts.trimSpace)
             put("autoContrast", opts.autoContrast)
+            put("capLineSpacing", opts.capLineSpacing.toDouble())
+            put("capSingleLine", opts.capSingleLine)
+            put("colorId", opts.colorId)
         })
         return o.toString()
     }
@@ -98,6 +101,9 @@ object Backup {
                 capRules = it.optBoolean("capRules", current.capRules),
                 trimSpace = it.optBoolean("trimSpace", current.trimSpace),
                 autoContrast = it.optBoolean("autoContrast", current.autoContrast),
+                capLineSpacing = it.optDouble("capLineSpacing", current.capLineSpacing.toDouble()).toFloat(),
+                capSingleLine = it.optBoolean("capSingleLine", current.capSingleLine),
+                colorId = it.optBoolean("colorId", current.colorId),
             )
         }
         return Restored(

@@ -383,46 +383,10 @@ fun TokenDetailScreen(vm: MainViewModel, token: Token, onBack: () -> Unit) {
                 }
             }
             items(arts, key = { it.id }) { art ->
-                val isFav = art.id in favArts
-                Card(
-                    onClick = { vm.openPrint(token, art) },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                ) {
-                    Box {
-                        TokenThumb(
-                            art.artUrl,
-                            Modifier.fillMaxWidth().aspectRatio(1.37f),
-                            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                        )
-                        Box(Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.35f), CircleShape)) {
-                            HeartButton(on = isFav, onClick = { vm.toggleFavArt(art.id) }, modifier = Modifier.size(36.dp), offTint = Color.White)
-                        }
-                    }
-                    Column(Modifier.padding(10.dp)) {
-                        Text(art.setName, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            listOf(art.artist, art.released.take(4)).filter { it.isNotBlank() }.joinToString(" · "),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        if (art.setCode == "custom") {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "Custom",
-                                    modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                IconButton(onClick = { confirmDelete = art }, modifier = Modifier.size(32.dp)) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Delete custom art", modifier = Modifier.size(18.dp))
-                                }
-                            }
-                        }
-                    }
+                val card: @Composable (Modifier) -> Unit = { m ->
+                    ArtCard(vm, token, art, art.id in favArts, onDelete = { confirmDelete = art }, modifier = m)
                 }
+                card(Modifier.quickPress(token, art, 1, card))
             }
         }
     }
@@ -440,6 +404,57 @@ fun TokenDetailScreen(vm: MainViewModel, token: Token, onBack: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } },
         )
+    }
+}
+
+@Composable
+private fun ArtCard(
+    vm: MainViewModel,
+    token: Token,
+    art: TokenArt,
+    isFav: Boolean,
+    onDelete: () -> Unit,
+    modifier: Modifier,
+) {
+    Card(
+        modifier = modifier,
+        onClick = { vm.openPrint(token, art) },
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Box {
+            TokenThumb(
+                art.artUrl,
+                Modifier.fillMaxWidth().aspectRatio(1.37f),
+                RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            )
+            Box(Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.35f), CircleShape)) {
+                HeartButton(on = isFav, onClick = { vm.toggleFavArt(art.id) }, modifier = Modifier.size(36.dp), offTint = Color.White)
+            }
+        }
+        Column(Modifier.padding(10.dp)) {
+            Text(art.setName, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOf(art.artist, art.released.take(4)).filter { it.isNotBlank() }.joinToString(" · "),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (art.setCode == "custom") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Custom",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete custom art", modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+        }
     }
 }
 

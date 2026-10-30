@@ -44,6 +44,12 @@ data class Opts(
     val capRules: Boolean,
     val trimSpace: Boolean,
     val autoContrast: Boolean,
+    /** Caption line height multiplier; 1.0 is the normal spacing. */
+    val capLineSpacing: Float,
+    /** Put the name, keywords/rules and power/toughness on one flowing line instead of separate lines. */
+    val capSingleLine: Boolean,
+    /** Write the token's colors (e.g. B/R/G) in the bottom left corner of the picture. */
+    val colorId: Boolean,
 )
 
 enum class SortMode(val label: String) {
@@ -163,6 +169,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             capRules = prefs.capRules,
             trimSpace = prefs.trimSpace,
             autoContrast = prefs.autoContrast,
+            capLineSpacing = prefs.capLineSpacing,
+            capSingleLine = prefs.capSingleLine,
+            colorId = prefs.colorId,
         )
     )
 
@@ -402,10 +411,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         printer.connect(addr)
     }
 
-    private fun captionStyle(o: Opts) = CaptionStyle(o.capSize, o.capFont, o.capBold)
+    private fun captionStyle(o: Opts) = CaptionStyle(o.capSize, o.capFont, o.capBold, o.capLineSpacing)
 
-    private fun renderImage(bmp: Bitmap, caption: CharSequence?, o: Opts, badge: String? = null) =
-        Raster.render(bmp, caption, captionStyle(o), o.contrast, o.invert, o.lsbFirst, o.trimSpace, profile.value, o.autoContrast, badge)
+    private fun renderImage(bmp: Bitmap, caption: CharSequence?, o: Opts, badge: String? = null, idMark: String? = null) =
+        Raster.render(bmp, caption, captionStyle(o), o.contrast, o.invert, o.lsbFirst, o.trimSpace, profile.value, o.autoContrast, badge, idMark)
+
+    /** The color letters for the corner of the picture, when that option is on. */
+    private fun markFor(token: Token, o: Opts): String? = if (o.colorId) token.colorMark else null
 
     fun setProfile(p: PrinterProfile) {
         profile.value = p
@@ -425,17 +437,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val kw = if (o.capKeywords && rules.isEmpty()) token.keywordText else ""
         val pt = if (o.capPt) token.pt else ""
         val sb = SpannableStringBuilder(token.name)
+        val single = o.capSingleLine
         fun small(text: String, scale: Float) {
-            sb.append("\n")
+            sb.append(if (single) "  " else "\n")
             val start = sb.length
-            sb.append(text)
+            sb.append(if (single) text.replace(Regex("\\s*\\n\\s*"), " ") else text)
             sb.setSpan(RelativeSizeSpan(scale), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         if (art.note.isNotBlank()) small(art.note.trim(), 0.8f)
         if (rules.isNotEmpty()) small(rules, 0.62f)
         else if (kw.isNotEmpty()) small(kw, 0.72f)
         if (pt.isNotEmpty()) {
-            if (sb.contains('\n')) sb.append("\n").append(pt) else sb.append("  ").append(pt)
+            if (!single && sb.contains('\n')) sb.append("\n").append(pt) else sb.append("  ").append(pt)
         }
         return sb
     }
@@ -543,6 +556,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         prefs.capRules = o.capRules
         prefs.trimSpace = o.trimSpace
         prefs.autoContrast = o.autoContrast
+        prefs.capLineSpacing = o.capLineSpacing
+        prefs.capSingleLine = o.capSingleLine
+        prefs.colorId = o.colorId
         render()
     }
 
@@ -563,7 +579,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             delay(60) // debounce slider drags
             try {
                 val bmp = sourceFor(cur, o)
-                val r = renderImage(bmp, captionFor(cur.token, cur.art, o), o, if (cur.goblin > 0) "${cur.goblin}x" else null)
+                val r = renderImage(bmp, captionFor(cur.token, cur.art, o), o, if (cur.goblin > 0) "${cur.goblin}x" else null, markFor(cur.token, o))
                 rendered = r
                 printUi.update { it?.copy(preview = r.preview, message = "") }
             } catch (e: CancellationException) {
@@ -588,6 +604,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 caption = captionFor(token, art, o),
                 captionStyle = captionStyle(o),
                 badge = if (goblin > 0) "${goblin}x" else null,
+                idMark = markFor(token, o),
                 o = o,
                 profile = profile.value,
                 style = style,
@@ -715,7 +732,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val url = if (o.fullCard) job.art.cardUrl else job.art.artUrl
                     val bmp = withContext(Dispatchers.IO) { Raster.fetchBitmap(url) }
                     val r = withContext(Dispatchers.Default) {
-                        renderImage(bmp, captionFor(job.token, job.art, o), o, job.badge)
+                        renderImage(bmp, captionFor(job.token, job.art, o), o, job.badge, markFor(job.token, o))
                     }
                     repeat(job.copies) {
                         step++
