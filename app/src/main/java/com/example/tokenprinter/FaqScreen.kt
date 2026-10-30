@@ -20,8 +20,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -298,6 +301,10 @@ private val faqGroups = listOf(
                 "Is the code open source?",
                 "Yes. Token Printer is free software under the GNU General Public License v3.0 (or later). The source code is on GitHub: Settings > Legal > Source code. Printer reports and fixes are welcome there.",
             ),
+            FaqEntry(
+                "How can I support the project?",
+                "Testing and feedback help the most: tell me which printers work for you (Settings > Help > Contact me, or a printer report on GitHub), and report anything that looks wrong.\n\nDonations are also appreciated. They go towards buying more printers to test with and general development costs. The tip links are at the bottom of Settings.",
+            ),
         ),
     ),
 )
@@ -313,6 +320,16 @@ fun FaqScreen(vm: MainViewModel, onBack: () -> Unit) {
         } catch (e: Exception) {
             ""
         }
+    }
+    var query by rememberSaveable { mutableStateOf("") }
+    // Every word typed must appear in the question or the answer.
+    val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    val shown = if (words.isEmpty()) faqGroups else faqGroups.mapNotNull { g ->
+        val hits = g.items.filter { e ->
+            val text = (e.q + " " + e.a + " " + g.title).lowercase()
+            words.all { it in text }
+        }
+        if (hits.isEmpty()) null else FaqGroup(g.title, hits)
     }
     Scaffold(
         topBar = {
@@ -346,9 +363,35 @@ fun FaqScreen(vm: MainViewModel, onBack: () -> Unit) {
                     }
                 }
             }
-            faqGroups.forEach { g ->
+            item(key = "search") {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("Search the FAQ") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = "Clear search") }
+                        }
+                    },
+                )
+            }
+            if (shown.isEmpty()) {
+                item(key = "none") {
+                    Text(
+                        "No questions match \"${query.trim()}\". Try another word, or ask through Settings > Help > Contact me.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    )
+                }
+            }
+            shown.forEach { g ->
                 item(key = "h-" + g.title) { SectionHeader(g.title) }
-                items(g.items, key = { g.title + "|" + it.q }) { FaqRow(it) }
+                // While searching, matching answers open by themselves.
+                items(g.items, key = { g.title + "|" + it.q }) { FaqRow(it, expanded = words.isNotEmpty()) }
             }
             item {
                 Text(
@@ -363,8 +406,8 @@ fun FaqScreen(vm: MainViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun FaqRow(e: FaqEntry) {
-    var open by rememberSaveable(e.q) { mutableStateOf(false) }
+private fun FaqRow(e: FaqEntry, expanded: Boolean = false) {
+    var open by rememberSaveable(e.q, expanded) { mutableStateOf(expanded) }
     Card(
         onClick = { open = !open },
         shape = MaterialTheme.shapes.medium,

@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.03
+- The FAQ has a search box. Matching answers open by themselves.
+- New FAQ answer: how you can support the project.
+- The tip links at the bottom of Settings now use the Venmo, Bitcoin and Dogecoin logos.
+
 ## 0.9.02
 - Prints and exports show a small artist credit at the bottom of the art. You can turn it off in Settings > Caption text > Artist credit.
 - An optional tip jar at the bottom of Settings (Venmo, Bitcoin, Dogecoin).

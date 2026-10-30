@@ -24,6 +24,10 @@ In `app/src/main/assets/fonts`, with their license texts:
 - Gloria Hallelujah © 2010 Kimberly Geswein ("Notebook")
 - Creepster © 2011 Font Diner, Inc ("Spooky")
 
+## Payment logos (CC0 1.0)
+The Venmo, Bitcoin and Dogecoin logos in `app/src/main/res/drawable/ic_tip_*.xml` come from Simple Icons
+(https://simpleicons.org, CC0 1.0). The brands and trademarks belong to their owners.
+
 ## Card data
 Card data and images come from the Scryfall API (https://scryfall.com) at run time and are not part of this repository.
 Magic: The Gathering is © Wizards of the Coast LLC. Token Printer is unofficial Fan Content permitted under the

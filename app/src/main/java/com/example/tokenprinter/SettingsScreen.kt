@@ -40,9 +40,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.CurrencyBitcoin
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Sync
@@ -389,16 +386,19 @@ private fun TipJar(ctx: android.content.Context) {
         cm.setPrimaryClip(android.content.ClipData.newPlainText("$label address", address))
         Toast.makeText(ctx, "$label address copied", Toast.LENGTH_SHORT).show()
     }
+    Text(
+        "Enjoying the app? Help me afford more packs:",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+    )
+    // On its own row under the text so it never squeezes on narrow phones.
     Row(
-        Modifier.fillMaxWidth().padding(top = 4.dp),
+        Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
-        Text(
-            "Enjoying the app? Tip jar:",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         androidx.compose.material3.IconButton(onClick = {
             try {
                 ctx.startActivity(
@@ -409,13 +409,13 @@ private fun TipJar(ctx: android.content.Context) {
                 Toast.makeText(ctx, "Couldn't open Venmo", Toast.LENGTH_SHORT).show()
             }
         }) {
-            Icon(Icons.Filled.Payments, contentDescription = "Tip with Venmo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(painterResource(R.drawable.ic_tip_venmo), contentDescription = "Tip with Venmo", modifier = Modifier.size(width = 44.dp, height = 9.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         androidx.compose.material3.IconButton(onClick = { copy("Bitcoin", TIP_BTC) }) {
-            Icon(Icons.Filled.CurrencyBitcoin, contentDescription = "Copy Bitcoin address", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(painterResource(R.drawable.ic_tip_bitcoin), contentDescription = "Copy Bitcoin address", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         androidx.compose.material3.IconButton(onClick = { copy("Dogecoin", TIP_DOGE) }) {
-            Icon(Icons.Filled.Pets, contentDescription = "Copy Dogecoin address", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(painterResource(R.drawable.ic_tip_dogecoin), contentDescription = "Copy Dogecoin address", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
