@@ -96,9 +96,10 @@ object Raster {
         autoContrast: Boolean = false,
         badge: String? = null,
         idMark: String? = null,
+        credit: String? = null,
     ): Rendered {
         val feed = if (trimSpace) profile.feedRowsTrimmed else profile.feedRows
-        val page = layoutPage(src, caption, style, profile.widthDots, profile.widthDots, trimSpace, feed, profile.rowsPerPacket, badge, idMark)
+        val page = layoutPage(src, caption, style, profile.widthDots, profile.widthDots, trimSpace, feed, profile.rowsPerPacket, badge, idMark, credit)
         return dither(
             page.bitmap, contrast, invert, lsbFirst,
             plainFrom = page.plainFrom,
@@ -125,6 +126,7 @@ object Raster {
         rowsPerPacket: Int,
         badge: String?,
         idMark: String? = null,
+        credit: String? = null,
     ): Page {
         val k = width.toFloat() / designWidth
         val padX = (PAD_X * k).roundToInt()
@@ -161,6 +163,7 @@ object Raster {
         val marks = ArrayList<RectF>()
         if (!badge.isNullOrEmpty()) marks.add(drawBadge(canvas, badge, width))
         if (!idMark.isNullOrEmpty()) marks.add(drawIdMark(canvas, idMark, width, imgH))
+        if (!credit.isNullOrEmpty()) marks.add(drawCredit(canvas, credit, width, imgH, leaveLeft = !idMark.isNullOrEmpty()))
         if (layout != null) {
             if (style.family == "scratch") {
                 val capBmp = Bitmap.createBitmap(width, textH, Bitmap.Config.ARGB_8888)
@@ -291,6 +294,41 @@ object Raster {
         canvas.drawRoundRect(box, r, r, line)
         canvas.drawText(text, box.left + padding, box.top + padding - fm.ascent, tp)
         return box
+    }
+
+    /**
+     * The artist credit ("Art: Name") in small white text with a thin black outline along the bottom of the picture,
+     * right-aligned so it stays clear of the color identity letters in the bottom left corner.
+     */
+    private fun drawCredit(canvas: Canvas, text: String, width: Int, imgH: Int, leaveLeft: Boolean): RectF {
+        val size = width * 0.034f
+        val outline = width * 0.004f
+        val margin = width * 0.022f
+        val face = Typeface.create("sans-serif", Typeface.BOLD)
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            typeface = face
+            textSize = size
+        }
+        val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            typeface = face
+            textSize = size
+            style = Paint.Style.STROKE
+            strokeWidth = outline * 2
+            strokeJoin = Paint.Join.ROUND
+        }
+        // Long names are shortened rather than run into the color letters.
+        val maxW = width * (if (leaveLeft) 0.62f else 0.92f)
+        var t = text
+        while (fill.measureText(t) > maxW && t.length > 6) t = t.dropLast(2) + "…"
+        val tw = fill.measureText(t)
+        val fm = fill.fontMetrics
+        val x = width - margin - outline - tw
+        val baseline = imgH - margin - outline - fm.descent
+        canvas.drawText(t, x, baseline, edge)
+        canvas.drawText(t, x, baseline, fill)
+        return RectF(x - outline, baseline + fm.ascent - outline, x + tw + outline, baseline + fm.descent + outline)
     }
 
     /**

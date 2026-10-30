@@ -235,6 +235,10 @@ private val faqGroups = listOf(
                 "Settings > Backup and restore > Save backup. It makes one file with your favorites, decks, custom tokens and settings. Restore backup adds what is in the file to what is already on the phone, and never deletes anything.",
             ),
             FaqEntry(
+                "What is the small \"Art:\" text on my prints?",
+                "It credits the artist who painted the token's art. Token Printer gets its card images from Scryfall, and Scryfall asks apps that use its images to credit the artist. It is on by default, but you can turn it off in Settings > Caption text > Artist credit. Whole-card prints already show the artist on the card, so the line is left off those.",
+            ),
+            FaqEntry(
                 "How do I update the app?",
                 "Token Printer checks for a new version the first time you open it each day, and shows what's new. Choose Update now, and Android will ask you to confirm the install. The first time, it also asks you to allow Token Printer to install updates.\n" +
                     "\n" +

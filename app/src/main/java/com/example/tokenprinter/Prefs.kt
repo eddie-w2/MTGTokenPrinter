@@ -69,6 +69,14 @@ class Prefs(ctx: Context) {
     var capSingleLine: Boolean
         get() = sp.getBoolean("capSingleLine", false)
         set(v) = sp.edit().putBoolean("capSingleLine", v).apply()
+    /** Small "Art: <artist>" credit at the bottom of the art (Scryfall asks apps to credit the artist). */
+    var artCredit: Boolean
+        get() = sp.getBoolean("artCredit", true)
+        set(v) = sp.edit().putBoolean("artCredit", v).apply()
+    /** Last time the user asked for a manual "Sync now"; used for a quiet 15 minute cooldown. */
+    var lastManualSync: Long
+        get() = sp.getLong("lastManualSync", 0L)
+        set(v) = sp.edit().putLong("lastManualSync", v).apply()
     var colorId: Boolean
         get() = sp.getBoolean("colorId", false)
         set(v) = sp.edit().putBoolean("colorId", v).apply()

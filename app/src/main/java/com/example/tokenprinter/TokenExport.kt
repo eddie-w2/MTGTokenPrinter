@@ -53,6 +53,7 @@ object TokenExport {
         captionStyle: CaptionStyle,
         badge: String?,
         idMark: String?,
+        credit: String?,
         o: Opts,
         profile: PrinterProfile,
         style: ExportStyle,
@@ -61,15 +62,15 @@ object TokenExport {
         return when (style) {
             ExportStyle.Color -> {
                 val k = EXPORT_WIDTH / design
-                Raster.layoutPage(src, caption, captionStyle, EXPORT_WIDTH, design, false, 8 * k, 1, badge, idMark).bitmap
+                Raster.layoutPage(src, caption, captionStyle, EXPORT_WIDTH, design, false, 8 * k, 1, badge, idMark, credit).bitmap
             }
             ExportStyle.Gray -> {
                 val k = EXPORT_WIDTH / design
-                val page = Raster.layoutPage(src, caption, captionStyle, EXPORT_WIDTH, design, false, 8 * k, 1, badge, idMark)
+                val page = Raster.layoutPage(src, caption, captionStyle, EXPORT_WIDTH, design, false, 8 * k, 1, badge, idMark, credit)
                 Raster.grayscale(page, o.contrast, o.autoContrast)
             }
             ExportStyle.BlackWhite -> {
-                val page = Raster.layoutPage(src, caption, captionStyle, design, design, false, 8, 1, badge, idMark)
+                val page = Raster.layoutPage(src, caption, captionStyle, design, design, false, 8, 1, badge, idMark, credit)
                 val bw = Raster.blackWhite(page, o.contrast, o.autoContrast)
                 // filter = false keeps hard pixel edges instead of blurring the dots into grey.
                 Bitmap.createScaledBitmap(bw, bw.width * BW_SCALE, bw.height * BW_SCALE, false)

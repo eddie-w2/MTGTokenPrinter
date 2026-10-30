@@ -40,6 +40,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CurrencyBitcoin
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Sync
@@ -367,6 +370,8 @@ fun SettingsTab(
             )
         }
 
+        TipJar(ctx)
+
         Text(
             "Token Printer $version · Card data and images from Scryfall",
             style = MaterialTheme.typography.labelSmall,
@@ -375,3 +380,46 @@ fun SettingsTab(
         )
     }
 }
+
+/** Small, optional tip links just above the version line. Venmo opens the link; crypto addresses are copied. */
+@Composable
+private fun TipJar(ctx: android.content.Context) {
+    fun copy(label: String, address: String) {
+        val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        cm.setPrimaryClip(android.content.ClipData.newPlainText("$label address", address))
+        Toast.makeText(ctx, "$label address copied", Toast.LENGTH_SHORT).show()
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            "Enjoying the app? Tip jar:",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        androidx.compose.material3.IconButton(onClick = {
+            try {
+                ctx.startActivity(
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(TIP_VENMO))
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            } catch (e: Exception) {
+                Toast.makeText(ctx, "Couldn't open Venmo", Toast.LENGTH_SHORT).show()
+            }
+        }) {
+            Icon(Icons.Filled.Payments, contentDescription = "Tip with Venmo", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        androidx.compose.material3.IconButton(onClick = { copy("Bitcoin", TIP_BTC) }) {
+            Icon(Icons.Filled.CurrencyBitcoin, contentDescription = "Copy Bitcoin address", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        androidx.compose.material3.IconButton(onClick = { copy("Dogecoin", TIP_DOGE) }) {
+            Icon(Icons.Filled.Pets, contentDescription = "Copy Dogecoin address", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private const val TIP_VENMO = "https://venmo.com/code?user_id=2045456691494912170&created=1793398630"
+private const val TIP_BTC = "1MVDhLzutjM2C3yY9EoWD17JC3BzkQH2Xa"
+private const val TIP_DOGE = "D5B3jznRMrxWCHT6wrewN8rQiRLXKG2Phf"

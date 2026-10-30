@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.02
+- Prints and exports show a small artist credit at the bottom of the art. You can turn it off in Settings > Caption text > Artist credit.
+- An optional tip jar at the bottom of Settings (Venmo, Bitcoin, Dogecoin).
+- Tidier requests to Scryfall: the app now names its version, and "Sync now" waits a little between syncs.
+
 ## 0.9.01
 - Token Printer is now open source, under the GNU General Public License v3.0. Settings > Legal has a link to the source code and the license text.
 - MX05, MX06, MX08, MX09 and MX10 printers feed paper after a print with blank lines instead of a feed command those models handle badly.

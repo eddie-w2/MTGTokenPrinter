@@ -298,6 +298,11 @@ fun PrinterInfoLine(info: PrinterInfo?, modifier: Modifier = Modifier) {
 @Composable
 fun CaptionControls(o: Opts, onChange: (Opts) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        ToggleRow(
+            "Artist credit",
+            o.artCredit,
+            "Small \"Art: name\" at the bottom of the picture. Scryfall asks apps that use its images to credit the artist.",
+        ) { onChange(o.copy(artCredit = it)) }
         ToggleRow("Name caption under the art", o.caption) { onChange(o.copy(caption = it)) }
         AnimatedVisibility(visible = o.caption) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

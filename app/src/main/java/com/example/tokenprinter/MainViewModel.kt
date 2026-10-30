@@ -53,6 +53,8 @@ data class Opts(
     val capSingleLine: Boolean,
     /** Write the token's colors (e.g. B/R/G) in the bottom left corner of the picture. */
     val colorId: Boolean,
+    /** Small "Art: <artist>" line at the bottom of the picture. */
+    val artCredit: Boolean,
 )
 
 enum class SortMode(val label: String) {
@@ -193,6 +195,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             capLineSpacing = prefs.capLineSpacing,
             capSingleLine = prefs.capSingleLine,
             colorId = prefs.colorId,
+            artCredit = prefs.artCredit,
         )
     )
 
@@ -353,6 +356,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun load(force: Boolean) {
         if (loading.value) return
+        if (force) {
+            // Quiet 15 minute cooldown on "Sync now" so Scryfall isn't asked for the whole list over and over.
+            val now = System.currentTimeMillis()
+            if (now - maxOf(prefs.lastSync, prefs.lastManualSync) in 0L until SYNC_COOLDOWN_MS) {
+                notice.value = "Recently synced, try again shortly"
+                return
+            }
+            prefs.lastManualSync = now
+        }
         viewModelScope.launch {
             loading.value = true
             error.value = null
@@ -567,8 +579,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun captionStyle(o: Opts) = CaptionStyle(o.capSize, o.capFont, o.capBold, o.capLineSpacing)
 
-    private fun renderImage(bmp: Bitmap, caption: CharSequence?, o: Opts, badge: String? = null, idMark: String? = null) =
-        Raster.render(bmp, caption, captionStyle(o), o.contrast, o.invert, o.lsbFirst, o.trimSpace, profile.value, o.autoContrast, badge, idMark)
+    private fun renderImage(bmp: Bitmap, caption: CharSequence?, o: Opts, badge: String? = null, idMark: String? = null, credit: String? = null) =
+        Raster.render(bmp, caption, captionStyle(o), o.contrast, o.invert, o.lsbFirst, o.trimSpace, profile.value, o.autoContrast, badge, idMark, credit)
+
+    /** The artist credit for the bottom of the picture. The whole-card image already shows it, and custom art has none. */
+    private fun creditFor(art: TokenArt, o: Opts): String? =
+        if (o.artCredit && !o.fullCard && art.artist.isNotBlank()) "Art: ${art.artist.trim()}" else null
 
     /** The color letters for the corner of the picture, when that option is on. */
     private fun markFor(token: Token, o: Opts): String? = if (o.colorId) token.colorMark else null
@@ -713,6 +729,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         prefs.capLineSpacing = o.capLineSpacing
         prefs.capSingleLine = o.capSingleLine
         prefs.colorId = o.colorId
+        prefs.artCredit = o.artCredit
         render()
     }
 
@@ -733,7 +750,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             delay(60) // debounce slider drags
             try {
                 val bmp = sourceFor(cur, o)
-                val r = renderImage(bmp, captionFor(cur.token, cur.art, o), o, if (cur.goblin > 0) "${cur.goblin}x" else null, markFor(cur.token, o))
+                val r = renderImage(bmp, captionFor(cur.token, cur.art, o), o, if (cur.goblin > 0) "${cur.goblin}x" else null, markFor(cur.token, o), creditFor(cur.art, o))
                 rendered = r
                 printUi.update { it?.copy(preview = r.preview, message = "") }
             } catch (e: CancellationException) {
@@ -759,6 +776,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 captionStyle = captionStyle(o),
                 badge = if (goblin > 0) "${goblin}x" else null,
                 idMark = markFor(token, o),
+                credit = creditFor(art, o),
                 o = o,
                 profile = profile.value,
                 style = style,
@@ -886,7 +904,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val url = if (o.fullCard) job.art.cardUrl else job.art.artUrl
                     val bmp = withContext(Dispatchers.IO) { Raster.fetchBitmap(url) }
                     val r = withContext(Dispatchers.Default) {
-                        renderImage(bmp, captionFor(job.token, job.art, o), o, job.badge, markFor(job.token, o))
+                        renderImage(bmp, captionFor(job.token, job.art, o), o, job.badge, markFor(job.token, o), creditFor(job.art, o))
                     }
                     repeat(job.copies) {
                         step++
@@ -1066,3 +1084,5 @@ sealed interface UpdateState {
     data class Installing(val info: Updater.Info) : UpdateState
     data class Failed(val message: String, val info: Updater.Info?) : UpdateState
 }
+
+private const val SYNC_COOLDOWN_MS = 15 * 60 * 1000L

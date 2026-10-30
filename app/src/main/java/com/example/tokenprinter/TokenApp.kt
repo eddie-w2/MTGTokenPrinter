@@ -14,6 +14,13 @@ import okhttp3.OkHttpClient
 class TokenApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
+        val version = try {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (e: Exception) {
+            null
+        }
+        if (!version.isNullOrBlank()) Scryfall.UA = "TokenPrinter/$version (+https://github.com/eddie-w2/MTGTokenPrinter)"
         Fonts.init(this)
     }
 

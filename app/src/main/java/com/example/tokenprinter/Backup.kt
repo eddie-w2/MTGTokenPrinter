@@ -65,6 +65,7 @@ object Backup {
             put("capLineSpacing", opts.capLineSpacing.toDouble())
             put("capSingleLine", opts.capSingleLine)
             put("colorId", opts.colorId)
+            put("artCredit", opts.artCredit)
         })
         return o.toString()
     }
@@ -107,6 +108,7 @@ object Backup {
                 capLineSpacing = it.optDouble("capLineSpacing", current.capLineSpacing.toDouble()).toFloat(),
                 capSingleLine = it.optBoolean("capSingleLine", current.capSingleLine),
                 colorId = it.optBoolean("colorId", current.colorId),
+                artCredit = it.optBoolean("artCredit", current.artCredit),
             )
         }
         return Restored(

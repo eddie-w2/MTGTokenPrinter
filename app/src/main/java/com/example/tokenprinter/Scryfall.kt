@@ -135,7 +135,8 @@ private data class Flat(
 private fun JSONObject.s(k: String): String = if (has(k) && !isNull(k)) getString(k) else ""
 
 object Scryfall {
-    const val UA = "TokenPrinter/0.6 (personal Android app)"
+    /** Scryfall asks for an accurate User-Agent with the app name and version; [TokenApp] fills in the version. */
+    @Volatile var UA = "TokenPrinter (+https://github.com/eddie-w2/MTGTokenPrinter)"
 
     private fun readError(c: HttpURLConnection): String =
         try {
