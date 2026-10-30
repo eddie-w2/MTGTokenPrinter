@@ -118,6 +118,7 @@ fun SettingsTab(
     val link by vm.printer.link.collectAsStateWithLifecycle()
     val info by vm.printer.info.collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
+    val updateState by vm.updateState.collectAsStateWithLifecycle()
     val ctx = LocalContext.current
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) vm.exportBackup(uri)
@@ -205,6 +206,11 @@ fun SettingsTab(
                 Button(onClick = onFaq) { Text("Open the FAQ") }
                 OutlinedButton(onClick = { vm.showWelcome() }) { Text("Welcome guide") }
             }
+        }
+
+        SettingsCard("App updates") {
+            UpdateBody(vm, updateState, version)
+            CheckUpdateButton(vm, updateState)
         }
 
         SettingsCard("Appearance") {

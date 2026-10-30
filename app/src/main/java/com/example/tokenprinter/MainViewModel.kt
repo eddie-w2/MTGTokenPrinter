@@ -235,6 +235,116 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         load(false)
     }
 
+    // ------------------------------------------------------------ app updates
+
+    private fun today(): String = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+
+    /** What the last check found, kept across launches while it is still newer than the installed app. */
+    private fun storedUpdate(): UpdateState {
+        val info = Updater.fromJson(prefs.updateInfo)
+        return if (info != null && info.versionCode > Updater.installedCode(getApplication<Application>())) UpdateState.Available(info) else UpdateState.Idle
+    }
+
+    val updateState = MutableStateFlow<UpdateState>(storedUpdate())
+
+    /** The "Update available" pop-up. Only the daily check opens it; Settings always shows the same information. */
+    val updateDialog = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            Updater.installMessage.collect { m ->
+                if (m != null) {
+                    val info = when (val s = updateState.value) {
+                        is UpdateState.Installing -> s.info
+                        is UpdateState.ReadyToInstall -> s.info
+                        else -> null
+                    }
+                    updateState.value = UpdateState.Failed(m, info)
+                    Updater.installMessage.value = null
+                }
+            }
+        }
+        // First launch of the day: ask GitHub whether there is a newer version.
+        if (prefs.lastUpdateCheck != today()) checkForUpdate(manual = false)
+    }
+
+    fun dismissUpdateDialog() {
+        updateDialog.value = false
+    }
+
+    private fun updateBusy() = updateState.value.let {
+        it is UpdateState.Checking || it is UpdateState.Downloading || it is UpdateState.Installing
+    }
+
+    fun checkForUpdate(manual: Boolean) {
+        if (updateBusy()) return
+        val before = updateState.value
+        updateState.value = UpdateState.Checking
+        viewModelScope.launch {
+            try {
+                val info = withContext(Dispatchers.IO) { Updater.fetchLatest() }
+                prefs.lastUpdateCheck = today()
+                if (info.versionCode > Updater.installedCode(getApplication<Application>())) {
+                    prefs.updateInfo = Updater.toJson(info)
+                    updateState.value = UpdateState.Available(info)
+                    if (!manual) updateDialog.value = true
+                } else {
+                    prefs.updateInfo = ""
+                    updateState.value = UpdateState.UpToDate
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A failed daily check stays quiet and is tried again at the next launch.
+                updateState.value = if (manual) UpdateState.Failed(e.message ?: "Couldn't check for updates.", null) else before
+            }
+        }
+    }
+
+    fun downloadUpdate(info: Updater.Info) {
+        if (updateBusy()) return
+        updateState.value = UpdateState.Downloading(info, 0f)
+        viewModelScope.launch {
+            try {
+                var last = -1
+                val file = withContext(Dispatchers.IO) {
+                    Updater.download(getApplication<Application>(), info) { p ->
+                        val pct = (p * 100).toInt()
+                        if (pct != last) {
+                            last = pct
+                            updateState.value = UpdateState.Downloading(info, p)
+                        }
+                    }
+                }
+                installUpdate(info, file)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                updateState.value = UpdateState.Failed(e.message ?: "The download failed.", info)
+            }
+        }
+    }
+
+    /** Installs the downloaded file, asking for the one-time "install unknown apps" permission first if needed. */
+    fun installUpdate(info: Updater.Info, file: File? = Updater.downloadedFile(getApplication<Application>())) {
+        if (file == null) {
+            downloadUpdate(info)
+            return
+        }
+        val app = getApplication<Application>()
+        if (!Updater.canInstall(app)) {
+            updateState.value = UpdateState.ReadyToInstall(info, needsPermission = true)
+            Updater.openInstallPermission(app)
+            return
+        }
+        updateState.value = UpdateState.Installing(info)
+        try {
+            Updater.install(app, file)
+        } catch (e: Exception) {
+            updateState.value = UpdateState.Failed(e.message ?: "Couldn't start the install.", info)
+        }
+    }
+
     // ------------------------------------------------------------ token sync
 
     fun load(force: Boolean) {
@@ -916,4 +1026,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             else pendingShare.value = body
         }
     }
+}
+
+/** Where the app update stands. Shown in Settings and, after the daily check, in a pop-up. */
+sealed interface UpdateState {
+    object Idle : UpdateState
+    object Checking : UpdateState
+    object UpToDate : UpdateState
+    data class Available(val info: Updater.Info) : UpdateState
+    data class Downloading(val info: Updater.Info, val progress: Float) : UpdateState
+    data class ReadyToInstall(val info: Updater.Info, val needsPermission: Boolean) : UpdateState
+    data class Installing(val info: Updater.Info) : UpdateState
+    data class Failed(val message: String, val info: Updater.Info?) : UpdateState
 }

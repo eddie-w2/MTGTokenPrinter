@@ -40,6 +40,27 @@ jobs:
             grep -E "^e: |What went wrong|Execution failed|error:|Error:|FAILED" -A3 build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
             exit 1
           }
+      - name: Publish release for the in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          HAVE_KEY: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        run: |
+          # Releases go to a public repo so the installed app can read them without a login.
+          if [ -z "$GH_TOKEN" ]; then echo "::warning::RELEASES_TOKEN is not set, so no update was published."; exit 0; fi
+          if [ "$HAVE_KEY" != "true" ]; then echo "::warning::Not signed with the project key, so no update was published."; exit 0; fi
+          VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
+          CODE=$(grep -m1 'versionCode' app/build.gradle.kts | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+          REPO=eddie-w2/MTGTokenPrinter-releases
+          if gh release view "v$VERSION" --repo "$REPO" >/dev/null 2>&1; then
+            echo "::notice::Release v$VERSION already exists, leaving it alone."; exit 0
+          fi
+          NAME="TokenPrinter-$VERSION-code$CODE.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$NAME"
+          sha256sum "$NAME" | cut -d' ' -f1 > "$NAME.sha256"
+          awk -v v="$VERSION" '$0 == "## " v {f=1; next} /^## / {f=0} f' CHANGELOG.md | sed '/./,$!d' > notes.md
+          if [ ! -s notes.md ]; then echo "Bug fixes and improvements." > notes.md; fi
+          gh release create "v$VERSION" "$NAME" "$NAME.sha256" --repo "$REPO" --title "Token Printer $VERSION" --notes-file notes.md --latest
       - name: Remove key file
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"

@@ -72,6 +72,8 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
     var showImport by remember { mutableStateOf(false) }
     var showFaq by rememberSaveable { mutableStateOf(false) }
     val welcome by vm.welcomeVisible.collectAsStateWithLifecycle()
+    val updateState by vm.updateState.collectAsStateWithLifecycle()
+    val updateDialog by vm.updateDialog.collectAsStateWithLifecycle()
 
     val deck = decks.firstOrNull { it.id == deckId }
     // Look the token up again so the detail screen sees new or deleted custom art straight away.
@@ -132,6 +134,8 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
     }
 
     if (welcome && shared == null) WelcomeDialog(vm, onFaq = { showFaq = true })
+    // The daily update check. Waits until the welcome pop-up is out of the way.
+    if (updateDialog && !welcome && updateState.hasUpdate()) UpdateDialog(vm, Updater.installedName(ctx))
     if (showPrinter) PrinterDialog(vm, withBle, onClose = { showPrinter = false })
     if (showImport) {
         ImportDeckDialog(

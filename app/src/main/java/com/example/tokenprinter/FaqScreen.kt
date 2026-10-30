@@ -250,6 +250,13 @@ private val faqGroups = listOf(
                     "Reverse bit order and Use handshake, plus a Test page. Legal has the credits and licenses.",
             ),
             FaqEntry(
+                "How do I update the app?",
+                "Token Printer checks for a new version the first time you open it each day, and shows what's new. Choose Update now, " +
+                    "and Android will ask you to confirm the install. The first time, it also asks you to allow Token Printer to install " +
+                    "updates.\n\n" +
+                    "If you choose Later, or want to check right away, go to Settings > App updates.",
+            ),
+            FaqEntry(
                 "How do I back up my stuff?",
                 "Settings > Backup and restore > Save backup. It makes one file with your favorites, decks, custom tokens and settings. " +
                     "Restore backup adds what is in the file to what is already on the phone, and never deletes anything.",

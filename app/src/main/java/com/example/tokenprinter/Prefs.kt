@@ -77,6 +77,14 @@ class Prefs(ctx: Context) {
     var welcomeDone: Boolean
         get() = sp.getBoolean("welcomeDone", false)
         set(v) = sp.edit().putBoolean("welcomeDone", v).apply()
+    /** The day (yyyy-MM-dd) the app last asked GitHub about updates. */
+    var lastUpdateCheck: String
+        get() = sp.getString("lastUpdateCheck", "") ?: ""
+        set(v) = sp.edit().putString("lastUpdateCheck", v).apply()
+    /** The newer version found by the last check, so it can still be installed after the pop-up was declined. */
+    var updateInfo: String
+        get() = sp.getString("updateInfo", "") ?: ""
+        set(v) = sp.edit().putString("updateInfo", v).apply()
     var sort: String
         get() = sp.getString("sort", "NameAsc") ?: "NameAsc"
         set(v) = sp.edit().putString("sort", v).apply()
