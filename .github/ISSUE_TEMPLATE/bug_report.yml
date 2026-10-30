@@ -1,0 +1,28 @@
+name: Bug report
+description: Something doesn't work as it should
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: And what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: input
+    id: version
+    attributes:
+      label: Token Printer version
+      description: Bottom of Settings
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+  - type: input
+    id: printer
+    attributes:
+      label: Printer (if it matters)

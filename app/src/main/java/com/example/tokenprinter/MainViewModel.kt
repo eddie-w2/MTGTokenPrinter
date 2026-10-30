@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 eddie-w2 and Token Printer contributors
+
 package com.example.tokenprinter
 
 import android.app.Application

@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
     val info = MutableStateFlow<PrinterInfo?>(null)
     val out = File(args[1]); out.mkdirs()
     fun job(w: Int, h: Int, dark: Int, trim: Boolean = false) = RasterJob(testRaster(w, h), w, dark, false, trim)
-    for (key in listOf("gb01", "x6", "mx05", "dl_x2pro", "seznikneo")) {
+    for (key in listOf("gb01", "x6", "mx02", "dl_x2pro", "seznikneo")) {
         val t = cat.byKey(key)!!
         for (dark in 1..3) {
             val bytes = when (t.family) {

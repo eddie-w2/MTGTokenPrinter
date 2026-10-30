@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 eddie-w2 and Token Printer contributors
+// Portions ported from TiMini-Print (https://github.com/Dejniel/TiMini-Print),
+// Copyright 2026 Daniel Banecki, licensed under the Apache License 2.0. See THIRD_PARTY_NOTICES.md.
+
 package com.example.tokenprinter
 
 import android.annotation.SuppressLint

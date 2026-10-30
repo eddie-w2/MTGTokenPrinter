@@ -33,7 +33,7 @@ def check(name, data):
         print(name, "same", len(k)//2, "bytes")
 
 bl = {1:1, 2:3, 3:5}
-for key in ["gb01","x6","mx05","dl_x2pro","seznikneo"]:
+for key in ["gb01","x6","mx02","dl_x2pro","seznikneo"]:
     dev = cat.device_from_model(key)
     for dark in (1,2,3):
         r = raster(dev.profile.paper_presets[0].paper_width_px if hasattr(dev.profile,'paper_presets') else 384, 30)

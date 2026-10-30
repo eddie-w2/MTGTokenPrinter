@@ -3,6 +3,10 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.01
+- Token Printer is now open source, under the GNU General Public License v3.0. Settings > Legal has a link to the source code and the license text.
+- MX05, MX06, MX08, MX09 and MX10 printers feed paper after a print with blank lines instead of a feed command those models handle badly.
+
 ## 0.9.00
 - Many more printers: Token Printer now recognises about 80 models that use the Funny Print, Tiny Print / iPrint, Fun Print / iBleem and Phomemo apps (GB01, X6, MX06, MXW01, YT01, XenGro AH-M2, Phomemo M02 and T02, and more), plus basic 58 mm and 80 mm receipt printers.
 - The printer list is grouped by the app each printer came with. Printers other than the LX-D02 are marked Experimental until someone confirms they work, so please report how yours prints.

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 eddie-w2 and Token Printer contributors
+// Portions ported from TiMini-Print (https://github.com/Dejniel/TiMini-Print),
+// Copyright 2026 Daniel Banecki, licensed under the Apache License 2.0. See THIRD_PARTY_NOTICES.md.
+
 package com.example.tokenprinter
 
 import android.os.SystemClock
@@ -562,8 +567,17 @@ class V5gDriver(type: PrinterType, address: String, scope: CoroutineScope, info:
         val rb = job.rowBytes
         for (y in 0 until job.height) out.write(Frames.make(Frames.CAT, 0xA2, lsb.copyOfRange(y * rb, (y + 1) * rb)))
         out.write(Frames.cat(0xBD, 0x19))
-        if (!job.trim) repeat(maxOf(0, type.postFeed)) {
-            out.write(if (type.dpi == 300) Frames.cat(0xA1, 0x48, 0x00) else Frames.cat(0xA1, 0x30, 0x00))
+        if (!job.trim) {
+            if (type.key in BLANK_LINE_FEED) {
+                // MX05/MX06/MX08/MX09/MX10 misbehave on the paper-feed command; feed with blank lines instead
+                // (the workaround NaitLee/Cat-Printer uses for these models, printer_lib/models.py problem_feeding).
+                val blank = Frames.make(Frames.CAT, 0xA2, ByteArray(rb))
+                repeat(maxOf(0, type.postFeed) * (if (type.dpi == 300) 72 else 48)) { out.write(blank) }
+            } else {
+                repeat(maxOf(0, type.postFeed)) {
+                    out.write(if (type.dpi == 300) Frames.cat(0xA1, 0x48, 0x00) else Frames.cat(0xA1, 0x30, 0x00))
+                }
+            }
         }
         out.write(Frames.make(Frames.CAT, 0xA6, hexBytes("AA55170000000000000017")))
         out.write(Frames.cat(0xA3, 0x00))
@@ -579,6 +593,11 @@ class V5gDriver(type: PrinterType, address: String, scope: CoroutineScope, info:
         link.send(data, pace) { sent -> onProgress(sent, data.size) }
         delay(500)
         info.value?.let { if (it.paperOut) throw IOException("Printer is out of paper") }
+    }
+
+    companion object {
+        /** Catalog models (MX05/MX06 share "mx05") that need blank lines instead of the feed command. */
+        private val BLANK_LINE_FEED = setOf("mx05", "mx08", "mx09", "mx10")
     }
 }
 

@@ -1,77 +1,56 @@
-# Token Printer (Android) 0.6
+# Token Printer
 
-Browse every Scryfall token, favorite the ones you use, build deck folders, and print the art straight to
-the YTETCN / "Funny Print" thermal printer (shows up as LX-D02) over Bluetooth LE. No Funny Print app needed.
+An Android app that prints Magic: The Gathering tokens as stickers on small, cheap Bluetooth thermal printers.
 
-## Open and run
-1. Android Studio Quail 4 (2026.1.4) or newer (the build uses AGP 9.4, Gradle 9.8.2, built-in Kotlin). File > Open > pick this folder, let Gradle sync.
-2. Plug in an Android phone (USB debugging on) and press Run (Android 8.0+, real phone, emulators have no BLE).
-3. Shareable APK: Build > Build APK(s). It lands in app/build/outputs/apk/debug/.
+Browse every token and emblem from Scryfall, pick the art you like, and print it, with the name, rules text,
+power/toughness and color identity underneath. Import a deck list to get every token it makes, draw or photograph your
+own tokens, and export images for printers the app can't talk to.
 
-Updating from 0.1: replace the whole project folder (or copy every file over, and delete the old `Ui.kt`), then
-File > Sync Project with Gradle Files. Your favorites survive because they live on the phone, not in the project.
+**Just want the app?** Download it from the [releases page](https://github.com/eddie-w2/MTGTokenPrinter-releases/releases/latest).
+It updates itself after the first install.
 
-## What's new in 0.6
-- Custom photos can be cropped: Wide, Square, Tall or Whole, drag to move, pinch or slider to zoom.
-- Custom tokens take extra text, printed under the name. Text options has "Show full rules text" for any token.
-- Three bundled fonts (Notebook, Paint, Spooky; SIL Open Font License, licenses in Settings) next to the built-in Android fonts, and a Scratched effect font.
-- Goblin Mode sits next to Copies and no longer skews auto contrast.
-- Darkness moved to Settings > Printer and is remembered per printer model.
-- Legal notices at the bottom of Settings.
+## Supported printers
+Printers are recognised by their Bluetooth name and grouped by the app they come with:
 
-## What was in 0.5
-- Release date sorting lives in the Sort menu. Emblems print their rules text under the name.
-- **Custom tokens**: tap the brush button. Draw with a finger or pick a photo (previewed as it will print). Type a name and tap a matching
-  token to add the picture as another art for it; otherwise it goes in the **Custom** folder (filter chip). Same-name customs share one entry.
-  Any token's detail screen also has "Add your own art".
-- **Goblin Mode**: button in the print dialog cycles 10x, 25x, 50x, 100x, off. The quantity is printed in a corner label.
-- **Printer status**: battery, paper, heat and low-voltage warnings (printer chip and Printer dialog). Battery scale is unverified; check the log.
-- **Auto contrast** toggle (Settings > Image quality), off by default.
-- **Printer models**: Settings > Printer model. Width and feed come from a profile, so new printers are one entry in PrinterProfile.kt.
-- **Backup and restore** in Settings (favorites, decks, custom tokens, settings). Restoring only adds, never deletes.
-- **Share**: send a deck list or Moxfield link to the app from any app's share sheet; share a deck's token list from the deck screen.
+| Printer's own app | Example models | Status |
+| --- | --- | --- |
+| Funny Print | LX-D02, LX-D01..D09, XenGro AH-M2 | LX-D02 tested, others experimental |
+| Tiny Print / iPrint | GB01..GB05, GT01, X5, X6, X7 | Experimental |
+| Fun Print / iBleem | MX05..MX13, YT01, BQ series, MXW01 | Experimental |
+| Phomemo | M02, M02X, M02S, M02 Pro, T02 | Experimental |
+| ESC/POS | 58 mm and 80 mm receipt printers | Experimental |
 
-## What was in 0.4
-- Printer tuning (reverse bit order, handshake, remove white space) lives only in Settings. **Invert** stays under Image quality.
-- Keyword abilities (Flying, Vigilance...) show on every token, above power/toughness, and print on the card (toggle in Text options).
-- Official-style Magic colors in the color filter (black is a deep purple).
-- Sort button (A-Z, Z-A, release date newest/oldest) and a Filters button (type, set list newest first) next to the grid/list button.
-- Emblems are included. The first launch after updating re-downloads the token list to pick up emblems and keywords.
+"Experimental" means the protocol is implemented but nobody has confirmed it on real hardware yet.
+**Printer reports are the most useful contribution you can make**: open an issue with the "Printer report" form.
 
-## What was in 0.2
-- **Thumbnails** on every token, with a User-Agent on image requests (Scryfall asks for one) and a 300 MB image cache.
-- **Favorite printings**: heart a token, or heart individual arts inside it. A favorite printing becomes that token's thumbnail
-  and the default art when a deck is imported. Both kinds pin to the top of the list.
-- **Settings tab**: last synced date/time (plus "x days ago"), Sync now, caption options, image quality, printer tuning.
-- **Caption text**: size slider (14-72), six fonts (Sans, Serif, Mono, Condensed, Handwriting, Casual), bold, show/hide P/T.
-  The preview in the print dialog updates live.
-- **Decks**: each deck is a folder of tokens with quantities and a chosen art for each. "Print all" prints the lot.
-  You can also add any token to a deck from the print dialog.
-- **Deck import**: paste a list, open a .txt file, or paste a Moxfield link (see below).
-- **Launcher icon**: Themed (default, also supports Android 13+ themed icons) or Color. Switch in Settings > App icon.
-- **Printing animation** and a restyled app (bottom navigation, grid/list view, dark and light themes).
+## Building
+1. Android Studio (the build uses AGP 9.4, Gradle 9.8.2 and Kotlin built into AGP). File > Open > pick this folder and let Gradle sync.
+2. Plug in an Android phone (8.0 or newer, USB debugging on) and press Run. Emulators have no Bluetooth printers.
+3. Without signing settings, builds use the debug key. Release signing reads `TOKENPRINTER_STORE_FILE`,
+   `TOKENPRINTER_STORE_PASSWORD`, `TOKENPRINTER_KEY_ALIAS` and `TOKENPRINTER_KEY_PASSWORD` from `~/.gradle/gradle.properties`
+   or environment variables. Never commit keys or passwords.
 
-## Deck import
-Scryfall links every card to the tokens it makes. The app looks your cards up in batches, collects those tokens, and matches
-them to your synced token list. Works with plain names, "1 Sol Ring", "1x Sol Ring (CMM) 400 *F*", Arena and Moxfield text exports.
-Maybeboard / considering sections are skipped.
+GitHub Actions builds every push. Pushes to `main` of this repository also publish a release for the in-app updater
+(release notes come from `CHANGELOG.md`).
 
-Moxfield links are best effort. Moxfield only lets approved apps use its API, so the link may be refused. If so, open the deck in
-Moxfield, use Export > copy as text, and paste it into the import box. That path always works.
+## Code map
+- `app/src/main/java/com/example/tokenprinter/`
+  - `MainViewModel.kt` app state, `App.kt` / `*Screen.kt` the Compose UI
+  - `Scryfall.kt` token download, `Raster.kt` layout and dithering, `TokenExport.kt` JPEG export
+  - `PrinterClient.kt` scanning and connecting, `PrinterLink.kt` BLE / Classic transport,
+    `PrinterDrivers.kt` one driver per printer family, `PrinterCatalog.kt` model detection
+  - `Updater.kt` self-updating from the releases repo
+- `app/src/main/assets/printers/catalog.json` printer models (regenerate with `tools/build_printer_catalog.py`)
+- `tools/printer_check/` checks the drivers' bytes against TiMini-Print on a desktop JVM
 
-## First test checklist (printer)
-1. Connect, then "Test page". Expect: solid block at the LEFT edge, outlined box at the RIGHT edge, "TEST ->" text, grey ramp dark to light.
-2. Everything is a negative? Turn on **Invert**. Scrambled or mirrored in thin strips? Turn on **Reverse bit order**.
-3. Nothing prints? Close Funny Print first (it holds the connection), then check the Bluetooth log in the Printer dialog.
-4. Too pale or dark: Darkness and Contrast sliders.
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Files
-- Scryfall.kt: API paging, grouping by token, disk cache
-- CustomEditor.kt, CustomTokens.kt, Backup.kt, PrinterProfile.kt: custom tokens, backup, printer models
-- Raster.kt: scale to the printer width (384 dots), caption (fonts/size), Floyd-Steinberg dither, 1-bit packing
-- PrinterClient.kt: BLE scan/connect, handshake, packet streaming
-- Decks.kt, DeckImport.kt: deck storage, list parsing, Moxfield and Scryfall lookups
-- MainViewModel.kt: app state and actions
-- AppIcon.kt: launcher icon switcher (activity-aliases in the manifest; art in res/drawable/ic_fg_*.xml).
-- TokenApp.kt: image loader. Theme.kt, Components.kt: look and shared widgets
-- App.kt, TokensScreen.kt, DecksScreen.kt, SettingsScreen.kt, PrinterDialog.kt, MainActivity.kt: screens
+## License
+Token Printer is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE). Third-party parts are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Token Printer is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. Not approved or
+endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
+Card data and images are provided by Scryfall. The app must stay free; printed tokens are for personal play, not for sale.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 eddie-w2 and Token Printer contributors
+
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.example.tokenprinter
@@ -286,6 +289,10 @@ private val faqGroups = listOf(
             FaqEntry(
                 "Is this official?",
                 "No. Token Printer is unofficial Fan Content, and is not approved by or affiliated with Wizards of the Coast, Scryfall or the printer makers. Printed tokens are for personal play only. The full wording and font licenses are at the bottom of Settings.",
+            ),
+            FaqEntry(
+                "Is the code open source?",
+                "Yes. Token Printer is free software under the GNU General Public License v3.0 (or later). The source code is on GitHub: Settings > Legal > Source code. Printer reports and fixes are welcome there.",
             ),
         ),
     ),

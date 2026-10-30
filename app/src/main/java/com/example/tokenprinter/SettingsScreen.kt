@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2026 eddie-w2 and Token Printer contributors
+
 package com.example.tokenprinter
 
 import android.text.format.DateUtils
@@ -101,6 +104,9 @@ private fun IconOption(icon: AppIcon, selected: Boolean, onClick: () -> Unit, mo
     }
 }
 
+/** Where the app's source code lives (GPL-3.0 asks that people who get the app can get the source). */
+const val SOURCE_URL = "https://github.com/eddie-w2/MTGTokenPrinter"
+
 @Composable
 fun SettingsTab(
     vm: MainViewModel,
@@ -141,7 +147,7 @@ fun SettingsTab(
     var showFontLicenses by remember { mutableStateOf(false) }
     if (showFontLicenses) {
         val text = remember {
-            val files = listOf("printers/NOTICE.txt", "printers/TiMini-Print-LICENSE.txt") +
+            val files = listOf("LICENSE-GPL-3.0.txt", "printers/NOTICE.txt", "printers/TiMini-Print-LICENSE.txt") +
                 listOf("paint", "notebook", "spooky").map { "fonts/$it-OFL.txt" }
             files.joinToString("\n\n----------\n\n") { f ->
                 try {
@@ -336,7 +342,24 @@ fun SettingsTab(
                     "Apache License 2.0: its printer catalog and protocol code, ported to Android.",
                 style = MaterialTheme.typography.bodySmall,
             )
-            OutlinedButton(onClick = { showFontLicenses = true }) { Text("View open-source licenses") }
+            Text(
+                "Token Printer is free, open-source software under the GNU General Public License v3.0 or later. You can get, " +
+                    "change and share its source code under that license.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    try {
+                        ctx.startActivity(
+                            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(SOURCE_URL))
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    } catch (e: Exception) {
+                        Toast.makeText(ctx, SOURCE_URL, Toast.LENGTH_LONG).show()
+                    }
+                }) { Text("Source code") }
+                OutlinedButton(onClick = { showFontLicenses = true }) { Text("Licenses") }
+            }
             Text(
                 "The app is provided as is, without warranty.",
                 style = MaterialTheme.typography.bodySmall,

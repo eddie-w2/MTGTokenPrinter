@@ -1,0 +1,46 @@
+name: Printer report
+description: Tell us how Token Printer works with your printer
+labels: ["printer"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Name in the scan list
+      description: The Bluetooth name Token Printer shows, e.g. X6, MX06, LX-D02
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: The printer's own app
+      description: The app the box or listing tells you to use (Funny Print, Tiny Print, iPrint, Fun Print, iBleem, Phomemo…)
+  - type: input
+    id: model
+    attributes:
+      label: Brand and model / store link
+  - type: input
+    id: detected
+    attributes:
+      label: What Token Printer detected it as
+      description: Shown under the printer name after connecting (e.g. "Cat printer (classic) · 384 dots")
+  - type: dropdown
+    id: result
+    attributes:
+      label: Did it print?
+      options:
+        - "Yes, prints correctly"
+        - "Prints, but looks wrong (too light/dark, cut off, garbled)"
+        - "Connects but nothing prints"
+        - "Won't connect"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you tried (Try as…, darkness, reverse bit order), your phone and Android version, and a photo of the test page if you can.
+  - type: input
+    id: version
+    attributes:
+      label: Token Printer version
+      description: Bottom of Settings
