@@ -2,48 +2,55 @@ package com.example.tokenprinter
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
-import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
-import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
-import java.util.UUID
-import kotlin.random.Random
 
-data class FoundPrinter(val name: String, val address: String, val rssi: Int, val likely: Boolean = false)
-
-private val PRINTER_NAME_PREFIXES = listOf("LX-", "DL-", "ZH-", "TD-", "YT", "C31", "T02", "XQ")
+/** A Bluetooth device seen while scanning, with the printer types its name points to. */
+data class FoundPrinter(
+    val name: String,
+    val address: String,
+    val rssi: Int,
+    val types: List<PrinterType> = emptyList(),
+    /** Seen through Classic Bluetooth discovery or the paired list rather than a BLE advertisement. */
+    val classic: Boolean = false,
+    val paired: Boolean = false,
+    /** Classic device class says "imaging" (printers and scanners). */
+    val imaging: Boolean = false,
+    val manufacturerData: List<ByteArray> = emptyList(),
+) {
+    val known: Boolean get() = types.isNotEmpty()
+    val tested: Boolean get() = name.trim().uppercase() in PrinterCatalog.TESTED_NAMES
+}
 
 enum class Link { Disconnected, Connecting, Connected }
 
-/** What the printer last reported about itself (0x02 status packets). */
+/** What the printer last reported about itself. Fields a printer doesn't report keep their defaults. */
 data class PrinterInfo(
-    val battery: Int,
+    val battery: Int?,
     val paperOut: Boolean,
     val charging: Boolean,
     val hot: Boolean,
     val lowVoltage: Boolean,
-    val density: Int,
+    val density: Int?,
+    /** True when [battery] is a percentage rather than an undocumented level. */
+    val batteryPercent: Boolean = false,
 ) {
     /** The most pressing problem, if any, in a few words. */
     val warning: String?
@@ -54,17 +61,22 @@ data class PrinterInfo(
             else -> null
         }
 
-    /** The battery value's scale isn't documented: small numbers are treated as a 0-4 level, the rest as a percentage. */
     val batteryText: String
-        get() = if (battery in 0..4) "level $battery of 4" else "$battery%"
+        get() = when {
+            battery == null -> "not reported"
+            batteryPercent -> "$battery%"
+            battery in 0..4 -> "level $battery of 4"
+            else -> "$battery%"
+        }
+
+    companion object {
+        fun unknown() = PrinterInfo(null, paperOut = false, charging = false, hot = false, lowVoltage = false, density = null)
+    }
 }
 
 /**
- * BLE client for the YTETCN / "Funny Print" family of thermal printers.
- *
- * Protocol recovered from the Funny Print app (all of it unverified on hardware, see README):
- *  - service FFE6, write characteristic FFE1 (write without response), notify characteristic FFE2
- *  - 12-byte commands starting 0x5A, 100-byte data packets starting 0x55
+ * Finds printers (BLE scan plus Classic discovery and the paired list), works out what kind each one is, and
+ * connects with the right driver. Printer families and model names come from [PrinterCatalog].
  */
 @SuppressLint("MissingPermission")
 class PrinterClient(private val ctx: Context, private val scope: CoroutineScope) {
@@ -76,35 +88,50 @@ class PrinterClient(private val ctx: Context, private val scope: CoroutineScope)
     val log = MutableStateFlow<List<String>>(emptyList())
     val info = MutableStateFlow<PrinterInfo?>(null)
 
+    /** The connected printer's type, and whether it was recognised for sure (by name) or guessed / picked by hand. */
+    val detected = MutableStateFlow<Detected?>(null)
+    val connectedName = MutableStateFlow<String?>(null)
+
+    val catalog: PrinterCatalog by lazy { PrinterCatalog.get(ctx) }
+
     private val manager = ctx.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val adapter: BluetoothAdapter? get() = manager.adapter
 
-    private var gatt: BluetoothGatt? = null
-    private var writeChar: BluetoothGattCharacteristic? = null
-    private var notifyChar: BluetoothGattCharacteristic? = null
-    private var mtu = 23
-    private var deviceAddress = ""
-
-    private val rx = Channel<ByteArray>(Channel.UNLIMITED)
+    private var conn: PrinterLink? = null
+    private var driver: PrinterDriver? = null
     private val printLock = Mutex()
 
-    @Volatile private var onConnected: CompletableDeferred<Unit>? = null
-    @Volatile private var onServices: CompletableDeferred<Unit>? = null
-    @Volatile private var onMtu: CompletableDeferred<Unit>? = null
-    @Volatile private var onDesc: CompletableDeferred<Unit>? = null
-
     // ---------------------------------------------------------------- scanning
+
+    private fun upsert(f: FoundPrinter) {
+        val old = found.value.firstOrNull { it.address == f.address }
+        val merged = if (old == null) f else f.copy(
+            name = f.name.ifBlank { old.name },
+            rssi = if (f.rssi != 0) f.rssi else old.rssi,
+            types = f.types.ifEmpty { old.types },
+            classic = f.classic && old.classic,
+            paired = f.paired || old.paired,
+            imaging = f.imaging || old.imaging,
+            manufacturerData = f.manufacturerData.ifEmpty { old.manufacturerData },
+        )
+        found.value = (found.value.filter { it.address != f.address } + merged)
+            .sortedWith(compareByDescending<FoundPrinter> { it.known }.thenByDescending { it.rssi })
+    }
 
     private val scanCb = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val name = result.scanRecord?.deviceName ?: result.device.name ?: return
-            val advertisesPrinterService = result.scanRecord?.serviceUuids
-                ?.any { it.toString().contains("ffe6", true) } == true
-            val likely = advertisesPrinterService ||
-                PRINTER_NAME_PREFIXES.any { name.startsWith(it, ignoreCase = true) }
-            val f = FoundPrinter(name, result.device.address, result.rssi, likely)
-            found.value = (found.value.filter { it.address != f.address } + f)
-                .sortedWith(compareByDescending<FoundPrinter> { it.likely }.thenByDescending { it.rssi })
+            if (name.isBlank()) return
+            val mfr = mutableListOf<ByteArray>()
+            result.scanRecord?.manufacturerSpecificData?.let { sa ->
+                for (i in 0 until sa.size()) {
+                    val id = sa.keyAt(i)
+                    val data = sa.valueAt(i) ?: ByteArray(0)
+                    mfr += byteArrayOf((id and 0xFF).toByte(), ((id shr 8) and 0xFF).toByte()) + data
+                }
+            }
+            val types = catalog.detect(name, result.device.address, mfr)
+            upsert(FoundPrinter(name, result.device.address, result.rssi, types, manufacturerData = mfr))
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -112,6 +139,23 @@ class PrinterClient(private val ctx: Context, private val scope: CoroutineScope)
             scanning.value = false
         }
     }
+
+    private val classicReceiver = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) {
+            if (i.action != BluetoothDevice.ACTION_FOUND) return
+            @Suppress("DEPRECATION")
+            val dev: BluetoothDevice = (if (Build.VERSION.SDK_INT >= 33) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+            else i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)) ?: return
+            val name = i.getStringExtra(BluetoothDevice.EXTRA_NAME) ?: dev.name ?: return
+            if (name.isBlank()) return
+            val rssi = i.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE).toInt().let { if (it == Short.MIN_VALUE.toInt()) -100 else it }
+            val imaging = dev.bluetoothClass?.majorDeviceClass == BluetoothClass.Device.Major.IMAGING
+            val types = catalog.detect(name, dev.address, emptyList())
+            if (types.isEmpty() && !imaging) return
+            upsert(FoundPrinter(name, dev.address, rssi, types, classic = true, paired = dev.bondState == BluetoothDevice.BOND_BONDED, imaging = imaging))
+        }
+    }
+    private var receiverRegistered = false
 
     fun scan() {
         val a = adapter
@@ -127,9 +171,34 @@ class PrinterClient(private val ctx: Context, private val scope: CoroutineScope)
         found.value = emptyList()
         scanning.value = true
         status.value = "Scanning…"
-        scanner.startScan(scanCb)
+        // Paired printers first: Classic-only printers (many Phomemo and receipt printers) often don't advertise.
+        try {
+            a.bondedDevices?.forEach { dev ->
+                val name = dev.name ?: return@forEach
+                val imaging = dev.bluetoothClass?.majorDeviceClass == BluetoothClass.Device.Major.IMAGING
+                val types = catalog.detect(name, dev.address, emptyList())
+                if (types.isNotEmpty() || imaging) {
+                    upsert(FoundPrinter(name, dev.address, -100, types, classic = true, paired = true, imaging = imaging))
+                }
+            }
+        } catch (_: Exception) {
+        }
+        try {
+            scanner.startScan(scanCb)
+        } catch (e: Exception) {
+            log("BLE scan failed: ${e.message}")
+        }
+        try {
+            if (!receiverRegistered) {
+                ContextCompat.registerReceiver(ctx, classicReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND), ContextCompat.RECEIVER_NOT_EXPORTED)
+                receiverRegistered = true
+            }
+            a.startDiscovery()
+        } catch (e: Exception) {
+            log("Classic discovery failed: ${e.message}")
+        }
         scope.launch {
-            delay(8_000)
+            delay(10_000)
             stopScan()
         }
     }
@@ -140,386 +209,211 @@ class PrinterClient(private val ctx: Context, private val scope: CoroutineScope)
             adapter?.bluetoothLeScanner?.stopScan(scanCb)
         } catch (_: Exception) {
         }
+        try {
+            adapter?.cancelDiscovery()
+        } catch (_: Exception) {
+        }
+        if (receiverRegistered) {
+            try {
+                ctx.unregisterReceiver(classicReceiver)
+            } catch (_: Exception) {
+            }
+            receiverRegistered = false
+        }
         scanning.value = false
         if (link.value == Link.Disconnected) status.value = "Not connected"
     }
 
     // -------------------------------------------------------------- connection
 
-    private val cb = object : BluetoothGattCallback() {
-        override fun onConnectionStateChange(g: BluetoothGatt, st: Int, newState: Int) {
-            if (g.device.address != deviceAddress) return
-            if (newState == BluetoothProfile.STATE_CONNECTED && st == BluetoothGatt.GATT_SUCCESS) {
-                onConnected?.complete(Unit)
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED || st != BluetoothGatt.GATT_SUCCESS) {
-                val ex = IOException("Disconnected (status $st)")
-                onConnected?.completeExceptionally(ex)
-                onServices?.completeExceptionally(ex)
-                onMtu?.completeExceptionally(ex)
-                onDesc?.completeExceptionally(ex)
-                if (link.value != Link.Connecting) {
-                    link.value = Link.Disconnected
-                    status.value = "Printer disconnected"
-                    info.value = null
+    /**
+     * Connects to [address]. [forced] picks the printer type by hand ("Try as…"); otherwise the name decides, and when
+     * the name is unknown or ambiguous the printer's Bluetooth services decide.
+     */
+    suspend fun connect(address: String, name: String, forced: PrinterType?, classicHint: Boolean = false, mfr: List<ByteArray> = emptyList()) {
+        disconnect()
+        stopScan()
+        val a = adapter ?: throw IOException("No Bluetooth adapter")
+        if (!a.isEnabled) throw IOException("Bluetooth is off")
+        link.value = Link.Connecting
+        status.value = "Connecting…"
+        try {
+            val cands = forced?.let { listOf(it) } ?: catalog.detect(name, address, mfr)
+            var last: Exception? = null
+            repeat(2) { attempt ->
+                try {
+                    connectOnce(a, address, name, cands, forced != null, classicHint)
+                    return
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    last = e
+                    closeLink()
+                    if (e is UnknownPrinterException) throw e
+                    if (attempt == 0) delay(500)
                 }
             }
-        }
-
-        override fun onServicesDiscovered(g: BluetoothGatt, st: Int) {
-            if (st == BluetoothGatt.GATT_SUCCESS) onServices?.complete(Unit)
-            else onServices?.completeExceptionally(IOException("Service discovery failed ($st)"))
-        }
-
-        override fun onMtuChanged(g: BluetoothGatt, mtuSize: Int, st: Int) {
-            if (st == BluetoothGatt.GATT_SUCCESS) mtu = mtuSize
-            onMtu?.complete(Unit)
-        }
-
-        override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, st: Int) {
-            onDesc?.complete(Unit)
-        }
-
-        override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) {
-            incoming(value)
-        }
-
-        @Deprecated("Deprecated in Java")
-        @Suppress("DEPRECATION")
-        override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic) {
-            if (Build.VERSION.SDK_INT < 33) incoming(c.value ?: return)
+            throw last ?: IOException("Connect failed")
+        } catch (e: Exception) {
+            closeLink()
+            link.value = Link.Disconnected
+            status.value = "Connect failed"
+            throw e
         }
     }
 
-    private fun incoming(b: ByteArray) {
-        log("← ${hex(b)}")
-        if (b.size >= 8 && (b[1].toInt() and 0xFF) == 0x02) {
-            // Status packet: battery, paper (1 = out), charging, hot (1 = too hot), low voltage (1 = low), density.
-            info.value = PrinterInfo(
-                battery = b[2].toInt() and 0xFF,
-                paperOut = b[3].toInt() == 1,
-                charging = b[4].toInt() == 1,
-                hot = b[5].toInt() == 1,
-                lowVoltage = b[6].toInt() == 1,
-                density = b[7].toInt() and 0xFF,
-            )
+    class UnknownPrinterException(msg: String) : IOException(msg)
+
+    private suspend fun connectOnce(a: BluetoothAdapter, address: String, name: String, cands: List<PrinterType>, forced: Boolean, classicHint: Boolean) {
+        val first = cands.firstOrNull()
+        val classicOnly = classicHint && (first == null || first.family == PrinterFamily.PHOMEMO || first.family == PrinterFamily.ESCPOS)
+        var type: PrinterType? = null
+        var sure = forced || cands.size == 1
+        var l: PrinterLink? = null
+
+        if (!classicOnly) {
+            val ble = BleLink(ctx, a, address, { log(it) }, { notify(it) }, { lost() })
+            try {
+                ble.open()
+                type = if (forced) first else pickByServices(cands, ble)
+                if (type != null && !forced && cands.size != 1) sure = false
+                if (type != null && servicesFit(type, ble)) l = ble else ble.close()
+            } catch (e: CancellationException) {
+                ble.close()
+                throw e
+            } catch (e: Exception) {
+                ble.close()
+                log("BLE: ${e.message}")
+                if (first == null || !(first.family == PrinterFamily.PHOMEMO || first.family == PrinterFamily.ESCPOS)) throw e
+            }
         }
-        rx.trySend(b.copyOf())
+        val lk: PrinterLink = l ?: run {
+            // Classic Bluetooth: Phomemo and receipt printers.
+            val t = type ?: first
+            if (t == null && !classicHint) {
+                throw UnknownPrinterException("Token Printer doesn't recognise this printer. Use \"Try as…\" to pick its type.")
+            }
+            if (t != null && t.family != PrinterFamily.PHOMEMO && t.family != PrinterFamily.ESCPOS) {
+                throw IOException("Couldn't find the ${t.family.label} service on this printer")
+            }
+            val spp = SppLink(a, address, { log(it) }, { notify(it) }, { lost() })
+            spp.open()
+            type = t ?: catalog.byKey(PrinterCatalog.ESCPOS_58)
+            if (t == null) sure = false
+            spp
+        }
+        val chosen = type ?: throw UnknownPrinterException("Token Printer doesn't recognise this printer. Use \"Try as…\" to pick its type.")
+        val d = PrinterDriver.create(chosen, address, scope, info) { log(it) }
+        d.link = lk
+        try {
+            if (lk is BleLink) lk.setUp(d.gattPlan, chosen.mtu)
+        } catch (e: Exception) {
+            lk.close()
+            throw e
+        }
+        conn = lk
+        driver = d
+        detected.value = Detected(chosen, sure)
+        connectedName.value = name
+        link.value = Link.Connected
+        status.value = "Connected to $name"
+        log("connected as ${chosen.name} (${chosen.family.label}, ${chosen.widthDots} dots)")
+        scope.launch {
+            try {
+                d.onConnected()
+            } catch (e: Exception) {
+                log("setup: ${e.message}")
+            }
+        }
     }
 
-    /** Asks the printer to report in (the hardware-info request also makes it send a status packet). */
+    /** Whether the connected device has the GATT service the type needs. */
+    private fun servicesFit(t: PrinterType, l: BleLink): Boolean {
+        val plan = GattPlan.forFamily(t.family)
+        if (plan.services.any { l.has(it) } || plan.writes.any { l.has(it) }) return true
+        return t.family == PrinterFamily.ESCPOS && l.services.isNotEmpty()
+    }
+
+    /**
+     * Picks between candidate types using the services the printer offers. With no candidates (unknown name) this is
+     * the probe: AE30+AE03 = MXW01-style, FFE6 = Funny Print, AE30 = classic cat printer, FF00 = Phomemo,
+     * serial-style services = receipt printer.
+     */
+    private fun pickByServices(cands: List<PrinterType>, l: BleLink): PrinterType? {
+        val hasAe03 = l.has("ae03")
+        if (cands.isNotEmpty()) {
+            if (hasAe03) cands.firstOrNull { it.family == PrinterFamily.V5X }?.let { return it }
+            if (l.has("ffe6")) cands.firstOrNull { it.family == PrinterFamily.FUNNY_LX }?.let { return it }
+            val fitting = cands.filter { servicesFit(it, l) && (hasAe03 || it.family != PrinterFamily.V5X) }
+            return fitting.firstOrNull() ?: cands.first()
+        }
+        return when {
+            l.has("ae30") && hasAe03 -> catalog.byKey("v5x")
+            l.has("ffe6") -> catalog.byKey("funny_lx_d")
+            l.has("ae30") || l.has("ae3a") || l.has("ae00") || l.has("ae80") || l.has("ab00") -> catalog.byKey("gb01")
+            l.has("ff00") -> catalog.byKey("phomemo_m02")
+            l.has("18f0") || l.has("49535343-fe7d-4ae5-8fa9-9fafd205e455") || l.has("ffe0") -> catalog.byKey(PrinterCatalog.ESCPOS_58)
+            else -> null
+        }
+    }
+
+    private fun notify(b: ByteArray) {
+        log("← ${hexShort(b)}")
+        driver?.onNotify(b)
+    }
+
+    private fun lost() {
+        link.value = Link.Disconnected
+        status.value = "Printer disconnected"
+        info.value = null
+    }
+
     fun refreshStatus() {
         scope.launch {
             try {
-                if (link.value == Link.Connected && !printLock.isLocked) write(cmd(0x01))
-            } catch (e: Exception) {
-                // not connected any more; nothing to refresh
+                if (link.value == Link.Connected && !printLock.isLocked) driver?.refreshStatus()
+            } catch (_: Exception) {
             }
         }
     }
 
-    suspend fun connect(address: String) {
-        disconnect()
-        var last: Exception? = null
-        repeat(2) {
-            try {
-                connectOnce(address)
-                return
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                last = e
-                closeGatt()
-                delay(500)
-            }
-        }
-        link.value = Link.Disconnected
-        status.value = "Connect failed"
-        throw last ?: IOException("Connect failed")
-    }
-
-    private suspend fun connectOnce(address: String) {
-        val a = adapter ?: throw IOException("No Bluetooth adapter")
-        if (!a.isEnabled) throw IOException("Bluetooth is off")
-        stopScan()
-        link.value = Link.Connecting
-        status.value = "Connecting…"
-        deviceAddress = address
-        val dev = a.getRemoteDevice(address)
-
-        val cd = CompletableDeferred<Unit>().also { onConnected = it }
-        gatt = dev.connectGatt(ctx, false, cb, BluetoothDevice.TRANSPORT_LE)
-        withTimeout(15_000) { cd.await() }
-        val g = gatt ?: throw IOException("Connection closed")
-
-        val sd = CompletableDeferred<Unit>().also { onServices = it }
-        if (!g.discoverServices()) throw IOException("Couldn't start service discovery")
-        withTimeout(10_000) { sd.await() }
-
-        val svc = g.services.firstOrNull { it.uuid.toString().contains("ffe6", true) }
-            ?: throw IOException("Printer service FFE6 not found. Services: " +
-                g.services.joinToString { it.uuid.toString().substring(0, 8) })
-        val w = svc.characteristics.firstOrNull { it.uuid.toString().contains("ffe1", true) }
-            ?: throw IOException("Write characteristic FFE1 not found")
-        val n = svc.characteristics.firstOrNull { it.uuid.toString().contains("ffe2", true) }
-            ?: throw IOException("Notify characteristic FFE2 not found")
-        writeChar = w
-        notifyChar = n
-
-        val md = CompletableDeferred<Unit>().also { onMtu = it }
-        if (g.requestMtu(247)) withTimeoutOrNull(3_000) { md.await() }
-        log("MTU $mtu")
-
-        g.setCharacteristicNotification(n, true)
-        n.getDescriptor(CCCD)?.let { d ->
-            val dd = CompletableDeferred<Unit>().also { onDesc = it }
-            val value = if (n.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0)
-                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            else BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
-            val started = if (Build.VERSION.SDK_INT >= 33) {
-                g.writeDescriptor(d, value) == BluetoothStatusCodes.SUCCESS
-            } else {
-                @Suppress("DEPRECATION")
-                run {
-                    d.value = value
-                    g.writeDescriptor(d)
-                }
-            }
-            if (started) withTimeoutOrNull(3_000) { dd.await() }
-        }
-
-        link.value = Link.Connected
-        status.value = "Connected to ${found.value.firstOrNull { it.address == address }?.name ?: address}"
-        scope.launch {
-            delay(400)
-            refreshStatus()
-        }
-    }
-
-    private fun closeGatt() {
+    private fun closeLink() {
         try {
-            gatt?.disconnect()
-            gatt?.close()
+            conn?.close()
         } catch (_: Exception) {
         }
-        gatt = null
-        writeChar = null
-        notifyChar = null
+        conn = null
+        driver = null
     }
 
     fun disconnect() {
-        closeGatt()
+        closeLink()
         info.value = null
+        detected.value = null
+        connectedName.value = null
         link.value = Link.Disconnected
         status.value = "Not connected"
     }
 
-    // ----------------------------------------------------------------- writing
-
-    private fun rawWrite(g: BluetoothGatt, c: BluetoothGattCharacteristic, part: ByteArray): Boolean {
-        val type = if (c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0)
-            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-        else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-        return if (Build.VERSION.SDK_INT >= 33) {
-            g.writeCharacteristic(c, part, type) == BluetoothStatusCodes.SUCCESS
-        } else {
-            @Suppress("DEPRECATION")
-            run {
-                c.writeType = type
-                c.value = part
-                g.writeCharacteristic(c)
-            }
-        }
-    }
-
-    private suspend fun write(data: ByteArray, quiet: Boolean = false) {
-        val g = gatt ?: throw IOException("Not connected")
-        val c = writeChar ?: throw IOException("Not connected")
-        if (!quiet) log("→ ${hex(data)}")
-        val chunk = maxOf(20, mtu - 3)
-        var off = 0
-        while (off < data.size) {
-            val part = data.copyOfRange(off, minOf(data.size, off + chunk))
-            var tries = 0
-            while (!rawWrite(g, c, part)) {
-                if (link.value != Link.Connected) throw IOException("Printer disconnected")
-                if (++tries > 400) throw IOException("Bluetooth write failed")
-                delay(5)
-            }
-            off += part.size
-        }
-    }
-
-    private suspend fun waitFor(vararg ops: Int, ms: Long): ByteArray? = withTimeoutOrNull(ms) {
-        var m: ByteArray
-        do {
-            m = rx.receive()
-        } while (m.size < 2 || (m[1].toInt() and 0xFF) !in ops)
-        m
-    }
-
     // ------------------------------------------------------------------ printing
 
-    private suspend fun runHandshake() {
-        val macs = linkedSetOf(deviceAddress.replace(":", "").uppercase())
-        write(cmd(0x01))
-        val info = waitFor(0x01, 0x02, ms = 1000)
-        if (info != null && info.size >= 8) {
-            macs.add(hex(info, 1, 7).replace(" ", ""))
-            macs.add(hex(info, 2, 8).replace(" ", ""))
-        }
-        for (mac in macs) {
-            val rnd = IntArray(10) { Random.nextInt(1, 255) }
-            val (low, high) = challenge(rnd, mac)
-            write(cmd(0x0A, *rnd))
-            val r = waitFor(0x0A, ms = 1500)
-            if (r == null) {
-                log("handshake: no reply, continuing without it")
-                return
-            }
-            if (hex(r, 2, 12).replace(" ", "") != low) {
-                log("handshake: key mismatch for $mac")
-                continue
-            }
-            write(cmd(0x0B, *hexToBytes(high).map { it.toInt() and 0xFF }.toIntArray()))
-            val ok = waitFor(0x0B, ms = 1500)
-            log(if (ok != null && ok.size > 2 && ok[2].toInt() == 1) "handshake OK" else "handshake: app check rejected")
-            return
-        }
-        log("handshake: no matching key, trying to print anyway")
-    }
-
-    /** [bits] is a 48-bytes-per-row, 1-bit raster with an even number of rows. */
-    suspend fun print(bits: ByteArray, density: Int, useHandshake: Boolean, onProgress: (Int, Int) -> Unit) {
+    suspend fun print(job: RasterJob, onProgress: (Int, Int) -> Unit) {
         printLock.withLock {
-            if (link.value != Link.Connected) throw IOException("Printer not connected")
-            while (rx.tryReceive().isSuccess) { /* drop stale notifications */ }
-            if (useHandshake) runHandshake()
-
-            write(cmd(0x0C, (density - 1).coerceIn(0, 2)))
-            delay(50)
-
-            val padded = bits.copyOf(((bits.size + PKT_DATA - 1) / PKT_DATA) * PKT_DATA)
-            val total = padded.size / PKT_DATA
-            // Funny Print: byte 4 = 0 starts a print, 1 ends/cancels it. Byte 5 (copies) is 0 for this printer family.
-            write(cmd(0x04, total shr 8, total and 0xFF, 0, 0))
-            waitFor(0x04, ms = 300)
-
-            log("sending $total data packets")
-            var next = 0
-            var paused = false
-            var pausedSince = 0L
-            var finished = false
-            var sentAllAt = 0L
-
-            fun control(m: ByteArray) {
-                if (m.size < 2) return
-                when (m[1].toInt() and 0xFF) {
-                    0x05 -> if (m.size >= 4) {
-                        // The printer asks for packet N (1-based); Funny Print resumes sending from N-1.
-                        val req = ((m[2].toInt() and 0xFF) shl 8) or (m[3].toInt() and 0xFF)
-                        next = (req - 1).coerceIn(0, total)
-                        paused = false
-                    }
-                    0x08 -> {
-                        paused = true
-                        pausedSince = SystemClock.elapsedRealtime()
-                    }
-                    0x06 -> finished = true
-                }
+            val d = driver
+            if (link.value != Link.Connected || d == null) throw IOException("Printer not connected")
+            if (job.width != d.type.widthDots) {
+                throw IOException("The image is ${job.width} dots wide but this printer takes ${d.type.widthDots}. Try again.")
             }
-
-            while (!finished) {
-                if (link.value != Link.Connected) throw IOException("Printer disconnected")
-                while (true) control(rx.tryReceive().getOrNull() ?: break)
-                if (finished) break
-                val now = SystemClock.elapsedRealtime()
-                if (paused) {
-                    if (now - pausedSince > 20_000) throw IOException("Printer stayed paused (paper out or cover open?)")
-                    delay(25)
-                } else if (next < total) {
-                    val p = ByteArray(PKT_SIZE)
-                    p[0] = 0x55
-                    p[1] = (next shr 8).toByte()
-                    p[2] = next.toByte()
-                    System.arraycopy(padded, next * PKT_DATA, p, 3, PKT_DATA)
-                    write(p, quiet = true)
-                    next++
-                    if (next >= total) {
-                        sentAllAt = now
-                        log("all $total packets sent, waiting for printer")
-                    }
-                    onProgress(next, total)
-                    delay(PKT_DELAY_MS)
-                } else {
-                    if (now - sentAllAt > 30_000) {
-                        log("no end-of-print message, assuming done")
-                        break
-                    }
-                    delay(25)
-                }
-            }
-            if (finished) {
-                // Funny Print acknowledges the end of a print with the "byte 4 = 1" status command.
-                try {
-                    write(cmd(0x04, total shr 8, total and 0xFF, 1, 0))
-                } catch (_: IOException) {
-                }
-            }
-            log("print finished")
+            d.print(job, onProgress)
         }
     }
 
     // ----------------------------------------------------------------- helpers
 
-    private fun log(s: String) {
+    fun log(s: String) {
         log.value = (log.value + s).takeLast(60)
     }
 
-    companion object {
-        private const val PKT_DATA = 96
-        private const val PKT_SIZE = 100
-        private const val PKT_DELAY_MS = 8L
-        private val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-
-        fun cmd(op: Int, vararg b: Int): ByteArray {
-            val a = ByteArray(12)
-            a[0] = 0x5A
-            a[1] = op.toByte()
-            b.forEachIndexed { i, v -> a[2 + i] = v.toByte() }
-            return a
-        }
-
-        fun crc16Xmodem(data: ByteArray): Int {
-            var crc = 0
-            for (byte in data) {
-                val b = byte.toInt() and 0xFF
-                for (i in 0..7) {
-                    val bit = ((b shr (7 - i)) and 1) == 1
-                    val c15 = ((crc shr 15) and 1) == 1
-                    crc = crc shl 1
-                    if (c15 xor bit) crc = crc xor 0x1021
-                }
-            }
-            return crc and 0xFFFF
-        }
-
-        /** Returns (expectedPrinterReply, keyBytesToSend) as upper-case hex strings. */
-        fun challenge(rnd: IntArray, mac: String): Pair<String, String> {
-            val low = StringBuilder()
-            val high = StringBuilder()
-            for (r in rnd) {
-                val v = crc16Xmodem(hexToBytes("%02X".format(r) + mac))
-                val s = "%04X".format(v)
-                high.append(s.substring(0, 2))
-                low.append(s.substring(2, 4))
-            }
-            return low.toString() to high.toString()
-        }
-
-        fun hexToBytes(s: String) =
-            ByteArray(s.length / 2) { s.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
-
-        fun hex(b: ByteArray, from: Int = 0, to: Int = b.size) =
-            (from until minOf(to, b.size)).joinToString(" ") { "%02X".format(b[it]) }
-    }
+    private fun hexShort(b: ByteArray) =
+        b.take(24).joinToString(" ") { "%02X".format(it) } + if (b.size > 24) " …" else ""
 }

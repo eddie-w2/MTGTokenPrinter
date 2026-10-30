@@ -36,6 +36,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
@@ -139,17 +141,19 @@ fun SettingsTab(
     var showFontLicenses by remember { mutableStateOf(false) }
     if (showFontLicenses) {
         val text = remember {
-            listOf("paint", "notebook", "spooky").joinToString("\n\n----------\n\n") { n ->
+            val files = listOf("printers/NOTICE.txt", "printers/TiMini-Print-LICENSE.txt") +
+                listOf("paint", "notebook", "spooky").map { "fonts/$it-OFL.txt" }
+            files.joinToString("\n\n----------\n\n") { f ->
                 try {
-                    ctx.assets.open("fonts/$n-OFL.txt").bufferedReader().use { it.readText() }
+                    ctx.assets.open(f).bufferedReader().use { it.readText() }
                 } catch (e: Exception) {
-                    "License text for $n could not be loaded."
+                    "License text $f could not be loaded."
                 }
             }
         }
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showFontLicenses = false },
-            title = { Text("Font licenses") },
+            title = { Text("Open-source licenses") },
             text = { Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.verticalScroll(rememberScrollState())) },
             confirmButton = { androidx.compose.material3.TextButton(onClick = { showFontLicenses = false }) { Text("Close") } },
         )
@@ -211,8 +215,16 @@ fun SettingsTab(
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { Contact.email(ctx) }) { Text("Contact me") }
-                OutlinedButton(onClick = { Contact.bugReport(ctx) }) { Text("Report a bug") }
+                Button(onClick = { Contact.email(ctx) }) {
+                    Icon(Icons.Filled.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Contact me")
+                }
+                OutlinedButton(onClick = { Contact.bugReport(ctx) }) {
+                    Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Report a bug")
+                }
             }
         }
 
@@ -257,14 +269,9 @@ fun SettingsTab(
                 Text(status, style = MaterialTheme.typography.bodyMedium)
             }
             if (link == Link.Connected) PrinterInfoLine(info)
-            Text("Printer model", style = MaterialTheme.typography.labelLarge)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Profiles.all.forEach { p ->
-                    FilterChip(selected = p.id == profile.id, onClick = { vm.setProfile(p) }, label = { Text(p.label) })
-                }
-            }
-            Text(
-                "${profile.widthDots} dots across. More printer models can be added here later.",
+            if (link == Link.Connected) PrinterTypeLine(vm)
+            else Text(
+                "Last printer: ${profile.label}, ${profile.widthDots} dots across. Token Printer recognises the printer type when it connects.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -314,7 +321,8 @@ fun SettingsTab(
                 style = MaterialTheme.typography.bodySmall,
             )
             Text(
-                "Not affiliated with the makers of YTETCN, Funny Print or LX-D02 printers. Product names are used only to describe compatibility. " +
+                "Not affiliated with any printer maker or printer app (YTETCN, Funny Print, Phomemo, Tiny Print, iPrint, Fun Print, iBleem and others). " +
+                    "Product names are used only to describe compatibility. " +
                     "Custom pictures you add stay on your phone, and you are responsible for having the right to use them.",
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -323,7 +331,12 @@ fun SettingsTab(
                     "(© 2011 Font Diner, Inc) are used under the SIL Open Font License 1.1. They appear in the app as Paint, Notebook and Spooky.",
                 style = MaterialTheme.typography.bodySmall,
             )
-            OutlinedButton(onClick = { showFontLicenses = true }) { Text("View font licenses") }
+            Text(
+                "Printer support is based on TiMini-Print by Daniel Banecki (github.com/Dejniel/TiMini-Print), used under the " +
+                    "Apache License 2.0: its printer catalog and protocol code, ported to Android.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            OutlinedButton(onClick = { showFontLicenses = true }) { Text("View open-source licenses") }
             Text(
                 "The app is provided as is, without warranty.",
                 style = MaterialTheme.typography.bodySmall,

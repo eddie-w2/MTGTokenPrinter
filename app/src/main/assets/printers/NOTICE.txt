@@ -1,0 +1,13 @@
+Printer support in Token Printer is based on TiMini-Print.
+
+TiMini-Print
+Copyright 2026 Daniel Banecki
+https://github.com/Dejniel/TiMini-Print
+
+Licensed under the Apache License, Version 2.0 (see TiMini-Print-LICENSE.txt).
+
+Token Printer uses a converted copy of TiMini-Print's printer catalog (catalog.json, made by
+tools/build_printer_catalog.py, which keeps only the printer families Token Printer supports) and
+Kotlin ports of its protocol code for these families: classic cat printers (51 78), V5G, V5X
+(MXW01, including the signing reply), Funny Print LX-D and Phomemo compact printers. The ports
+were rewritten for Android and changed to fit Token Printer.

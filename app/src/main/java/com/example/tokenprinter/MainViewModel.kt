@@ -143,7 +143,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val selectedDeckId = MutableStateFlow<String?>(null)
     val importState = MutableStateFlow(ImportState())
 
-    val profile = MutableStateFlow(Profiles.byId(prefs.profileId))
+    /** Paper width and feed for the connected (or last used) printer. */
+    val profile = MutableStateFlow(Profiles.byId(prefs.profileId, printer.catalog))
     val editor = MutableStateFlow<CustomEditorRequest?>(null)
     val notice = MutableStateFlow<String?>(null)
     val pendingShare = MutableStateFlow<String?>(null)
@@ -518,11 +519,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun scan() = printer.scan()
     fun disconnect() = printer.disconnect()
 
-    fun connect(f: FoundPrinter) {
+    /** Connects to a printer from the scan list. [asType] is a type picked by hand under "Try as…". */
+    fun connect(f: FoundPrinter, asType: PrinterType? = null) {
         viewModelScope.launch {
             try {
-                printer.connect(f.address)
+                printer.connect(f.address, f.name, asType, f.classic, f.manufacturerData)
                 prefs.lastPrinter = f.address
+                prefs.lastPrinterName = f.name
+                prefs.lastPrinterClassic = f.classic
+                // A hand-picked type is remembered for this printer; a recognised one is worked out again each time.
+                prefs.lastPrinterType = asType?.key
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -535,7 +541,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (printer.link.value == Link.Connected) return
         val addr = prefs.lastPrinter
             ?: throw IllegalStateException("No printer chosen yet. Tap the Printer button and pick one.")
-        printer.connect(addr)
+        val name = prefs.lastPrinterName ?: "LX-D02"
+        printer.connect(addr, name, printer.catalog.byKey(prefs.lastPrinterType), prefs.lastPrinterClassic)
+        // The image is laid out for the printer's width, so make sure that is current before rendering.
+        syncProfile()
+    }
+
+    /** Follows the connected printer: its width decides how tokens are laid out. */
+    private fun syncProfile() {
+        val d = printer.detected.value ?: return
+        val p = Profiles.forType(d.type, printer.connectedName.value)
+        if (p.id != profile.value.id || p.widthDots != profile.value.widthDots || p.label != profile.value.label) setProfile(p)
+    }
+
+    init {
+        viewModelScope.launch { printer.detected.collect { if (it != null) syncProfile() } }
+    }
+
+    private suspend fun printBits(bits: ByteArray, o: Opts, onProgress: (Int, Int) -> Unit) {
+        printer.print(RasterJob(bits, profile.value.widthDots, o.density, o.handshake, o.trimSpace), onProgress)
     }
 
     private fun captionStyle(o: Opts) = CaptionStyle(o.capSize, o.capFont, o.capBold, o.capLineSpacing)
@@ -615,7 +639,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     Raster.render(bmp, null, captionStyle(o), 1.0f, o.invert, o.lsbFirst, o.trimSpace, profile.value)
                 }
                 printRun.update { it?.copy(preview = r.preview) }
-                printer.print(r.bits, o.density, o.handshake) { s, t ->
+                printBits(r.bits, o) { s, t ->
                     printRun.update { it?.copy(progress = s.toFloat() / t) }
                 }
                 printRun.update { it?.copy(progress = 1f, finished = true) }
@@ -864,7 +888,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     repeat(job.copies) {
                         step++
                         printRun.value = PrintRun(title, step, steps, 0f, r.preview)
-                        printer.print(r.bits, o.density, o.handshake) { sent, total ->
+                        printBits(r.bits, o) { sent, total ->
                             printRun.update { it?.copy(progress = sent.toFloat() / total) }
                         }
                         printRun.update { it?.copy(progress = 1f) }
@@ -997,7 +1021,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 customs.value = customs.value + newCustoms
                 customStore.save(customs.value)
 
-                r.profileId?.let { setProfile(Profiles.byId(it)) }
+                r.profileId?.let { setProfile(Profiles.byId(it, printer.catalog)) }
                 r.opts?.let { setOpts(it) }
                 notice.value = "Backup restored: ${newDecks.size} decks, ${newCustoms.size} custom tokens added."
             } catch (e: CancellationException) {

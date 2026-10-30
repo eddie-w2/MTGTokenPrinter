@@ -268,10 +268,12 @@ fun PrinterInfoLine(info: PrinterInfo?, modifier: Modifier = Modifier) {
         return
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            "Battery: ${info.batteryText}" + if (info.charging) " (charging)" else "",
-            style = MaterialTheme.typography.bodySmall,
-        )
+        if (info.battery != null) {
+            Text(
+                "Battery: ${info.batteryText}" + if (info.charging) " (charging)" else "",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
         Text(
             "Paper: " + if (info.paperOut) "out" else "loaded",
             style = MaterialTheme.typography.bodySmall,
@@ -340,7 +342,7 @@ fun PrinterTuningControls(o: Opts, printerName: String, onChange: (Opts) -> Unit
         }
         ToggleRow("Remove white space", o.trimSpace, "Cuts the blank paper under the token text. Tear carefully; the last line sits close to the edge.") { onChange(o.copy(trimSpace = it)) }
         ToggleRow("Reverse bit order", o.lsbFirst, "Turn on if prints look scrambled or mirrored.") { onChange(o.copy(lsbFirst = it)) }
-        ToggleRow("Use handshake", o.handshake, "The security check Funny Print does when it connects.") { onChange(o.copy(handshake = it)) }
+        ToggleRow("Use handshake", o.handshake, "Funny Print (LX-D) printers only: the security check their app does before printing.") { onChange(o.copy(handshake = it)) }
     }
 }
 

@@ -1,0 +1,2939 @@
+{
+ "source": "TiMini-Print printer catalog (Apache-2.0), converted by tools/build_printer_catalog.py",
+ "models": [
+  {
+   "key": "funprint_v5x",
+   "name": "MXW01-1",
+   "family": "v5x",
+   "variant": null,
+   "width": 384,
+   "dpi": 203,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print"
+   ],
+   "origins": [
+    "com.fun.mxw"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MXW01-1",
+      "KERUI"
+     ]
+    },
+    {
+     "exact_names": [
+      "BQ17"
+     ],
+     "manufacturer_data_suffixes": [
+      "59"
+     ],
+     "manufacturer_data_lengths": [
+      5,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ibleem_v5x",
+   "name": "JK01",
+   "family": "v5x",
+   "variant": null,
+   "width": 384,
+   "dpi": 203,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "iBleem"
+   ],
+   "origins": [
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "JK01"
+     ]
+    },
+    {
+     "exact_names": [
+      "YT01",
+      "YT02"
+     ],
+     "manufacturer_data_suffixes": [
+      "59"
+     ],
+     "manufacturer_data_lengths": [
+      5,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "key": "funprint_v5x_gray_label",
+   "name": "BH03",
+   "family": "v5x",
+   "variant": null,
+   "width": 384,
+   "dpi": 203,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print"
+   ],
+   "origins": [
+    "com.fun.mxw"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "BH03"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "iprintit",
+   "name": "IprintIt",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "IprintIt",
+      "DY01",
+      "LP6"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pocket_printer",
+   "name": "Pocket Printer",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    5000,
+    5000,
+    5000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "Pocket Printer",
+      "Luxorp.PX10",
+      "EMX-040256",
+      "SeznikEcho",
+      "TCM690464",
+      "UXPORTMIP",
+      "DL_GE225",
+      "ML-MP-01",
+      "ROSSMANN",
+      "0019B-C",
+      "0019B-D",
+      "DTR-R0",
+      "GB03PL",
+      "HT0125",
+      "RT034h",
+      "DT1-0",
+      "SC03h",
+      "SC04h",
+      "X103h",
+      "DY03",
+      "X100",
+      "X2h",
+      "X5h",
+      "X6h",
+      "X7h",
+      "XC9",
+      "D1",
+      "X18",
+      "DT1-R",
+      "TD-11308",
+      "XC9-FL01",
+      "P1",
+      "P2"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ewtto_et_z0504",
+   "name": "ewtto ET-Z0504",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    9500,
+    9500,
+    9500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "ewtto ET-Z0504",
+      "IM.04",
+      "X103H",
+      "SC05",
+      "X102",
+      "X5HP",
+      "X6HP",
+      "P7H",
+      "X2H",
+      "X5H",
+      "X6H",
+      "X7H"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "seznikneo",
+   "name": "SeznikNeo",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": 20,
+   "energy": [
+    12000,
+    12000,
+    12000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "SeznikNeo",
+      "RS9000",
+      "XiaoWa",
+      "JRX01",
+      "QDX01",
+      "wts07",
+      "CP01",
+      "DY49",
+      "S5A",
+      "P20 max",
+      "S9A",
+      "DY33A",
+      "YMS-BT01",
+      "WJ-HOT-PRT"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cmt_0510",
+   "name": "CMT-0510",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "CMT-0510",
+      "SC03",
+      "SC04",
+      "GV-MA211"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "dl_x2pro",
+   "name": "DL_X2Pro",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 300,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    5000,
+    5000,
+    5000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "DL_X2Pro",
+      "P5"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb02sh",
+   "name": "GB02SH",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 25,
+   "energy": [
+    7000,
+    7000,
+    7000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB02SH"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb03ph",
+   "name": "GB03PH",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 25,
+   "energy": [
+    9500,
+    9500,
+    9500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB03PH",
+      "GB03SH"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb03sl",
+   "name": "GB03SL",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    5000,
+    5000,
+    5000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB03SL"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mini_printer",
+   "name": "Mini Printer",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 20,
+   "energy": [
+    14000,
+    14000,
+    14000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "Mini Printer"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "dl_x2",
+   "name": "DL_X2",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    8000,
+    8000,
+    8000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "DL_X2"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "lgm01",
+   "name": "LGM01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    20000,
+    20000,
+    20000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "LGM01",
+      "X7HP"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pt001",
+   "name": "PT001",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    20000,
+    20000,
+    20000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "PT001"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "sc03h",
+   "name": "SC03H",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 25,
+   "energy": [
+    20000,
+    20000,
+    20000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "SC03H",
+      "FC02"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "x101h_2",
+   "name": "X101H",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    9500,
+    9500,
+    9500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "X101H"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "58p5",
+   "name": "58P5",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    6500,
+    6500,
+    6500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "58P5",
+      "WL01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ai01",
+   "name": "AI01",
+   "family": "v5x",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "AI01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "an01",
+   "name": "AN01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    4000,
+    5000,
+    6000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "AN01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "fl01",
+   "name": "FL01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": 20,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "FL01",
+      "KF-5"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb01",
+   "name": "GB01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": 35,
+   "energy": [
+    8000,
+    12000,
+    17500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb02",
+   "name": "GB02",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": 26,
+   "energy": [
+    8600,
+    12000,
+    16000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB02"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb03",
+   "name": "GB03",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB03",
+      "GB06"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb04",
+   "name": "GB04",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": 26,
+   "energy": [
+    8600,
+    12000,
+    16000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB04"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gb05",
+   "name": "GB05",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 26,
+   "energy": [
+    10000,
+    10000,
+    10000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GB05"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gt01",
+   "name": "GT01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    12000,
+    12000,
+    12000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GT01",
+      "GT03"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gt02",
+   "name": "GT02",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GT02"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gt04",
+   "name": "GT04",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    8000,
+    8000,
+    8000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "GT04"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "jx001",
+   "name": "JX001",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 90,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "JX001",
+      "JX002",
+      "JX003",
+      "JX004",
+      "JX005",
+      "JX006"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "lt01",
+   "name": "LT01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    4500,
+    4500,
+    4500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "LT01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ly01",
+   "name": "LY01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 40,
+   "energy": [
+    0,
+    9500,
+    20000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "LY01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ly02",
+   "name": "LY02",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 45,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "LY02"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ly03",
+   "name": "LY03",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "LY03"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "ly05",
+   "name": "LY05",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 40,
+   "energy": [
+    12000,
+    12000,
+    12000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "LY05"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx02",
+   "name": "MX02",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX02"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx03",
+   "name": "MX03",
+   "family": "v5g",
+   "variant": null,
+   "width": 576,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX03"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx05",
+   "name": "MX05",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    150,
+    180,
+    200
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX05",
+      "MX06",
+      "MXTP-100",
+      "CYLOBTPRINTER",
+      "EWTTOET-Z0499"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx08",
+   "name": "MX08",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    60,
+    90,
+    110
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX08"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx09",
+   "name": "MX09",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    100,
+    120,
+    140
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX09"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx10",
+   "name": "MX10",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    150,
+    180,
+    200
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX10",
+      "AZ-P2108X",
+      "MXW009",
+      "KP-IM606",
+      "GV-MA211"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx11",
+   "name": "MX11",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    100,
+    130,
+    150
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX11",
+      "MX12"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "p5ai",
+   "name": "P5AI",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 45,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "P5AI",
+      "PR07",
+      "XW003",
+      "XW009",
+      "M01",
+      "AI01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pr02",
+   "name": "PR02",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    5500,
+    5500,
+    5500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "PR02",
+      "XW008"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "xw001",
+   "name": "XW001",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": false,
+   "postFeed": 2,
+   "speed": 45,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "XW001"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pr30",
+   "name": "PR30",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 18,
+   "energy": [
+    5,
+    10,
+    12
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "PR30"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "xw002",
+   "name": "XW002",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 300,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 45,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "XW002"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "xw004",
+   "name": "XW004",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 18,
+   "energy": [
+    12000,
+    12000,
+    12000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "XW004",
+      "PR35"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "s101",
+   "name": "S101",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "S101"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "s102",
+   "name": "S102",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "S102"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "zhhc",
+   "name": "ZHHC",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "ZHHC"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "a33",
+   "name": "A33",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 25,
+   "energy": [
+    9500,
+    9500,
+    9500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "A33"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "hd1",
+   "name": "HD1",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 40,
+   "energy": [
+    8500,
+    8500,
+    8500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "HD1"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "p10",
+   "name": "P10",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    5500,
+    5500,
+    5500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "P10"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "s01",
+   "name": "S01",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": 23,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    6500,
+    6500,
+    6500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "S01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "v5x",
+   "name": "X1",
+   "family": "v5x",
+   "variant": null,
+   "width": 384,
+   "dpi": 203,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "X1",
+      "X2",
+      "MXW01",
+      "C17",
+      "MXW-W5",
+      "PORTABLEPRINTER",
+      "INSTANTPRINTPLUS",
+      "REKA",
+      "HDMDT-00"
+     ]
+    },
+    {
+     "exact_names": [
+      "MX01",
+      "MX05",
+      "MX06",
+      "MX08",
+      "MX09",
+      "MX10",
+      "MX11",
+      "MX12",
+      "MX13",
+      "MXTP-100",
+      "MXPC-100",
+      "AZ-P2108X",
+      "PD01",
+      "URBANWORXKIDSCAMERA",
+      "CYLOBTPRINTER",
+      "XOPOPPY",
+      "BQ01",
+      "EWTTOET-Z0499",
+      "BQ05",
+      "BQ95B",
+      "BQ95C",
+      "BQ95",
+      "BQ06B",
+      "BQ06",
+      "BQ07",
+      "BQ7A",
+      "BQ7B",
+      "BQ08",
+      "BQ96",
+      "MXW009",
+      "MXW010",
+      "EWTTOET-N3689",
+      "EWTTOET-N3687",
+      "KP-IM606",
+      "GV-MA211",
+      "X6",
+      "K06",
+      "MX02",
+      "MX03",
+      "MX07",
+      "MINIPRINTER",
+      "JL-BR22",
+      "BQ02",
+      "BQ03"
+     ],
+     "manufacturer_data_suffixes": [
+      "59"
+     ],
+     "manufacturer_data_lengths": [
+      5,
+      7
+     ]
+    }
+   ]
+  },
+  {
+   "key": "x16",
+   "name": "X16",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    5000,
+    5000,
+    5000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "X16",
+      "Audio Print",
+      "A2",
+      "A3"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "m2",
+   "name": "M2",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    4500,
+    4500,
+    4500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "M2"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "p6",
+   "name": "P6",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    9500,
+    9500,
+    9500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "P6"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "p7",
+   "name": "P7",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 30,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "P7"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "u1",
+   "name": "U1",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": true,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    20000,
+    20000,
+    20000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "U1"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "x1",
+   "name": "X1",
+   "family": "tiny",
+   "variant": null,
+   "width": 576,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 40,
+   "energy": [
+    8500,
+    8500,
+    8500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "X1"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "x5",
+   "name": "X5",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "X5"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "x6",
+   "name": "X6",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    9000,
+    9000,
+    9000
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "X6"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "x7",
+   "name": "X7",
+   "family": "tiny",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": true,
+   "postFeed": 2,
+   "speed": 10,
+   "energy": [
+    7500,
+    7500,
+    7500
+   ],
+   "density": null,
+   "apps": [
+    "Tiny Print"
+   ],
+   "origins": [
+    "com.frogtosea.tinyPrint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "prefixes": [
+      "X7"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "yt01_v5g",
+   "name": "YT01",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "YT01",
+      "YT02",
+      "MX01",
+      "MXPC-100",
+      "URBANWORXKIDSCAMERA",
+      "BQ01",
+      "BQ05",
+      "BQ95B",
+      "BQ95C",
+      "BQ95",
+      "BQ06B",
+      "BQ06",
+      "BQ07",
+      "BQ7A",
+      "BQ7B",
+      "BQ08",
+      "BQ96",
+      "EWTTOET-N3689",
+      "EWTTOET-N3687",
+      "X6",
+      "K06"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx07_v5g",
+   "name": "MX07",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    60,
+    80,
+    100
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX07"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mx13_v5g",
+   "name": "MX13",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    60,
+    80,
+    100
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MX13",
+      "XOPOPPY"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "pd01_v5g",
+   "name": "PD01",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    100,
+    130,
+    150
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "PD01"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "miniprinter_v5g",
+   "name": "MINIPRINTER",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    90,
+    110,
+    130
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MINIPRINTER",
+      "JL-BR22"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "bq02_v5g",
+   "name": "BQ02",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": [
+    100,
+    150,
+    200
+   ],
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "BQ02",
+      "BQ03",
+      "BQ17"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "mxw010_v5g",
+   "name": "MXW010",
+   "family": "v5g",
+   "variant": null,
+   "width": 384,
+   "dpi": 200,
+   "spp": false,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 1,
+   "speed": null,
+   "energy": [
+    10000,
+    10000,
+    15000
+   ],
+   "density": null,
+   "apps": [
+    "Fun Print",
+    "iBleem"
+   ],
+   "origins": [
+    "com.fun.mxw",
+    "com.bleem.liugm"
+   ],
+   "whitespace": "remove",
+   "detect": [
+    {
+     "exact_names": [
+      "MXW010"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "phomemo_m02s",
+   "name": "M02S",
+   "family": "phomemo_esc",
+   "variant": "m02s",
+   "width": 576,
+   "dpi": 300,
+   "spp": true,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": [
+    1,
+    2,
+    4
+   ],
+   "apps": [
+    "Phomemo"
+   ],
+   "origins": [
+    "com.quyin.phomemo"
+   ],
+   "whitespace": "trim",
+   "detect": [
+    {
+     "exact_names": [
+      "M02S",
+      "Mr.in_M02S"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "phomemo_m02",
+   "name": "M02",
+   "family": "phomemo_esc",
+   "variant": "m02",
+   "width": 384,
+   "dpi": 203,
+   "spp": true,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": [
+    1,
+    2,
+    4
+   ],
+   "apps": [
+    "Phomemo"
+   ],
+   "origins": [
+    "com.quyin.phomemo"
+   ],
+   "whitespace": "trim",
+   "detect": [
+    {
+     "exact_names": [
+      "M02",
+      "M02C",
+      "Mr.in",
+      "Mr.in_M02"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "phomemo_m02x",
+   "name": "M02X",
+   "family": "phomemo_esc",
+   "variant": "m02x",
+   "width": 384,
+   "dpi": 203,
+   "spp": true,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": [
+    1,
+    2,
+    4
+   ],
+   "apps": [
+    "Phomemo"
+   ],
+   "origins": [
+    "com.quyin.phomemo"
+   ],
+   "whitespace": "trim",
+   "detect": [
+    {
+     "exact_names": [
+      "M02X",
+      "M02D",
+      "M02E",
+      "MR2",
+      "M02A",
+      "KP-Q1"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "phomemo_t02",
+   "name": "T02",
+   "family": "phomemo_esc",
+   "variant": "t02",
+   "width": 384,
+   "dpi": 203,
+   "spp": true,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": [
+    1,
+    2,
+    4
+   ],
+   "apps": [
+    "Phomemo"
+   ],
+   "origins": [
+    "com.quyin.phomemo"
+   ],
+   "whitespace": "trim",
+   "detect": [
+    {
+     "exact_names": [
+      "T02",
+      "T02E",
+      "C02E"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "phomemo_m02_pro",
+   "name": "M02 Pro",
+   "family": "phomemo_esc",
+   "variant": "m02_pro",
+   "width": 576,
+   "dpi": 300,
+   "spp": true,
+   "mtu": null,
+   "rle": false,
+   "postFeed": 2,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": [
+    1,
+    2,
+    4
+   ],
+   "apps": [
+    "Phomemo"
+   ],
+   "origins": [
+    "com.quyin.phomemo"
+   ],
+   "whitespace": "trim",
+   "detect": [
+    {
+     "exact_names": [
+      "M02 Pro",
+      "M02PRO",
+      "sandymaro"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "funny_lx_d",
+   "name": "LX-D01",
+   "family": "funny_lx",
+   "variant": null,
+   "width": 384,
+   "dpi": 203,
+   "spp": false,
+   "mtu": 511,
+   "rle": false,
+   "postFeed": 0,
+   "speed": null,
+   "energy": [
+    0,
+    0,
+    0
+   ],
+   "density": null,
+   "apps": [
+    "Funny Print"
+   ],
+   "origins": [
+    "com.lailaixiong.funnyprint"
+   ],
+   "whitespace": "preserve",
+   "detect": [
+    {
+     "exact_names": [
+      "LX-D01",
+      "LX-D02",
+      "LX-D2",
+      "LX-D3",
+      "LX-D4",
+      "LX-D5",
+      "LX-D6",
+      "LX-D7",
+      "LX-D8",
+      "LX-D9",
+      "LX-D03",
+      "LX-D04",
+      "LX-D05",
+      "LX-D06",
+      "LX-D07",
+      "LX-D08",
+      "LX-D09"
+     ]
+    }
+   ]
+  }
+ ]
+}

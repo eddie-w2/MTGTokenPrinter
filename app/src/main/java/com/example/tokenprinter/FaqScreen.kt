@@ -58,8 +58,9 @@ private val faqGroups = listOf(
             ),
             FaqEntry(
                 "What printers are currently supported?",
-                "It is built for the YTETCN / Funny Print printers, which show up as LX-D02.\n" +
-                    "There are plans to add a lot more, it's just still in the works.\n" +
+                "It is built for the YTETCN / Funny Print printers, which show up as LX-D02. That is the one printer that has been tested. Other Funny Print printers, like the XenGro AH-M2, use the same commands.\n" +
+                    "\n" +
+                    "It also recognises around 80 other models by their Bluetooth name: printers that use the Funny Print, Tiny Print, iPrint, Fun Print, iBleem and Phomemo apps (for example GB01, X6, MX06, MXW01, YT01, Phomemo M02 and T02), plus basic 58 mm and 80 mm receipt printers. These are marked Experimental until someone confirms they work.\n" +
                     "\n" +
                     "For printers it can't connect to yet, you can export a token as a JPEG and print it from that printer's own app (see Exporting images).",
             ),
@@ -74,7 +75,7 @@ private val faqGroups = listOf(
                 "1. Switch the printer on.\n" +
                     "2. Close the default printing app you use if it is open. Only one app can talk to the printer at a time.\n" +
                     "3. Tap the Connect button at the top right of the app.\n" +
-                    "4. Tap Scan, then pick your printer. It should say 'Likely your printer'.\n" +
+                    "4. Tap Scan, then pick your printer. Printers the app recognises are listed first, grouped by the app they came with (Funny Print, Tiny Print / iPrint, Fun Print / iBleem, Phomemo).\n" +
                     "5. Allow the Bluetooth permission when Android asks.\n" +
                     "\n" +
                     "The button changes to Ready once it is connected, and the app remembers the printer for next time. Settings > Printer > Test page prints a pattern so you can check everything works. If there are any issues, there are additional printer settings within the settings menu.",
@@ -244,6 +245,8 @@ private val faqGroups = listOf(
             FaqEntry(
                 "The app can't find my printer.",
                 "Switch the printer on, close the manufacturer’s app, make sure Bluetooth is on, and tap Scan again. Move the phone close to the printer. Allow the Bluetooth permission if Android asks (older Android versions ask for Location instead, which Bluetooth scanning needs there).\n" +
+                    "\n" +
+                    "If it isn't in the list, tap \"Show other Bluetooth devices\" and tap your printer: the app checks what it is when it connects. You can also tap ⋮ next to it (Try as…) and pick the app your printer came with, then print a test page.\n" +
                     "\n" +
                     "Your printer might not be supported yet. If that is the case reach out and let me know what printer you're using and I will do my best to add compatibility! You can reach me from Settings > Help > Contact me.",
             ),

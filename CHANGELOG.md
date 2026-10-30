@@ -3,6 +3,13 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.00
+- Many more printers: Token Printer now recognises about 80 models that use the Funny Print, Tiny Print / iPrint, Fun Print / iBleem and Phomemo apps (GB01, X6, MX06, MXW01, YT01, XenGro AH-M2, Phomemo M02 and T02, and more), plus basic 58 mm and 80 mm receipt printers.
+- The printer list is grouped by the app each printer came with. Printers other than the LX-D02 are marked Experimental until someone confirms they work, so please report how yours prints.
+- Printer not listed? Show other Bluetooth devices, then use Try as… to pick the app it came with.
+- Prints and exports now fit the connected printer's paper width (including 576-dot printers).
+- Icons on the Contact me and Report a bug buttons.
+
 ## 0.8.01
 - New Contact me and Report a bug buttons in Settings > Help. The bug report email fills in your version, the date and your phone for you.
 - A clearer FAQ and welcome guide.

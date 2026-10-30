@@ -107,4 +107,14 @@ class Prefs(ctx: Context) {
     var lastPrinter: String?
         get() = sp.getString("lastPrinter", null)
         set(v) = sp.edit().putString("lastPrinter", v).apply()
+    var lastPrinterName: String?
+        get() = sp.getString("lastPrinterName", null)
+        set(v) = sp.edit().putString("lastPrinterName", v).apply()
+    /** A printer type picked by hand ("Try as…") for the last printer; null when it was recognised by name. */
+    var lastPrinterType: String?
+        get() = sp.getString("lastPrinterType", null)
+        set(v) = sp.edit().putString("lastPrinterType", v).apply()
+    var lastPrinterClassic: Boolean
+        get() = sp.getBoolean("lastPrinterClassic", false)
+        set(v) = sp.edit().putBoolean("lastPrinterClassic", v).apply()
 }
