@@ -20,18 +20,52 @@ object Contact {
     /** A plain "contact me" email with no subject. */
     fun email(ctx: Context) = send(ctx, null)
 
-    /** A bug report: the subject carries the app version, today's date and the phone, so reports are easy to sort. */
-    fun bugReport(ctx: Context) {
+    /**
+     * A bug report: the subject carries the app version, today's date and the phone, so reports are easy to sort,
+     * and the body is a short form asking for what's needed to track a bug down, with the details filled in.
+     */
+    fun bugReport(ctx: Context, printerLine: String) {
         val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
         val maker = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
         val model = if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "$maker ${Build.MODEL}"
-        send(ctx, "Token Printer bug report: v${Updater.installedName(ctx)}, $date, $model, Android ${Build.VERSION.RELEASE}")
+        val version = Updater.installedName(ctx)
+        val body = """
+            |What happened?
+            |
+            |
+            |What did you expect to happen?
+            |
+            |
+            |Steps to make it happen (1, 2, 3...):
+            |
+            |
+            |Where in the app? (Tokens, Decks, print screen, Settings...):
+            |
+            |Does it happen every time?
+            |
+            |Printer, if it's about printing (name in the scan list, and the app it came with):
+            |
+            |
+            |Screenshots or a photo of the print help a lot. Please attach them.
+            |
+            |---- Filled in by the app (please leave) ----
+            |App version: $version
+            |Phone: $model
+            |Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
+            |Printer: $printerLine
+            |Date: $date
+        """.trimMargin()
+        send(ctx, "Token Printer bug report: v$version, $date, $model, Android ${Build.VERSION.RELEASE}", body)
     }
 
-    private fun send(ctx: Context, subject: String?) {
-        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-            putExtra(Intent.EXTRA_EMAIL, arrayOf(EMAIL))
+    private fun send(ctx: Context, subject: String?, body: String? = null) {
+        // Subject and body go both in the mailto link and as extras: different email apps read one or the other.
+        val query = listOfNotNull(subject?.let { "subject=" + Uri.encode(it) }, body?.let { "body=" + Uri.encode(it) })
+            .joinToString("&")
+        val uri = Uri.parse("mailto:$EMAIL" + if (query.isEmpty()) "" else "?$query")
+        val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
             if (subject != null) putExtra(Intent.EXTRA_SUBJECT, subject)
+            if (body != null) putExtra(Intent.EXTRA_TEXT, body)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {

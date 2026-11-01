@@ -25,8 +25,8 @@ android {
         applicationId = "com.example.tokenprinter"
         minSdk = 26
         targetSdk = 36
-        versionCode = 16
-        versionName = "0.9.03"
+        versionCode = 17
+        versionName = "0.9.04"
     }
     signingConfigs {
         if (haveKey) {

@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.04
+- Report a bug now opens an email with a short form to fill in, plus your app version, phone and printer details already added.
+- The Legal section in Settings folds away; tap its title to open it.
+- The version line at the bottom of Settings is centred and shows the copyright and licence.
+
 ## 0.9.03
 - The FAQ has a search box. Matching answers open by themselves.
 - New FAQ answer: how you can support the project.

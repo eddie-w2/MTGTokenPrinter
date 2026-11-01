@@ -38,6 +38,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Email
@@ -61,15 +65,33 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-private fun SettingsCard(title: String, content: @Composable () -> Unit) {
+private fun SettingsCard(title: String, collapsible: Boolean = false, content: @Composable () -> Unit) {
+    // Collapsible cards start folded; tapping the title opens them.
+    var open by rememberSaveable(title) { mutableStateOf(!collapsible) }
     Card(
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            content()
+            if (collapsible) {
+                Row(
+                    Modifier.fillMaxWidth().clickable { open = !open },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (open) "Collapse" else "Expand",
+                    )
+                }
+                AnimatedVisibility(visible = open) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
+                }
+            } else {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                content()
+            }
         }
     }
 }
@@ -226,7 +248,16 @@ fun SettingsTab(
                     Spacer(Modifier.width(8.dp))
                     Text("Contact me")
                 }
-                OutlinedButton(onClick = { Contact.bugReport(ctx) }) {
+                OutlinedButton(onClick = {
+                    val d = vm.printer.detected.value
+                    val printerLine = if (d != null) {
+                        "${vm.printer.connectedName.value ?: "?"} (connected) · detected as ${d.type.family.label}, ${d.type.widthDots} dots" +
+                            if (d.sure) "" else " (guessed or picked by hand)"
+                    } else {
+                        "not connected · last used: ${profile.label}, ${profile.widthDots} dots"
+                    }
+                    Contact.bugReport(ctx, printerLine)
+                }) {
                     Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Report a bug")
@@ -309,7 +340,7 @@ fun SettingsTab(
             }
         }
 
-        SettingsCard("Legal") {
+        SettingsCard("Legal", collapsible = true) {
             Text(
                 "Token Printer is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. " +
                     "Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.",
@@ -370,10 +401,11 @@ fun SettingsTab(
         TipJar(ctx)
 
         Text(
-            "Token Printer $version · Card data and images from Scryfall",
+            "Token Printer $version\n© 2026 eddie-w2 and Token Printer contributors · GPL-3.0",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
         )
     }
 }
