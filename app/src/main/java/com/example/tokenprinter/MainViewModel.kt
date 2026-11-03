@@ -90,7 +90,11 @@ data class PrintUi(
     val goblin: Int = 0,
 )
 
-data class PrintJob(val token: Token, val art: TokenArt, val copies: Int, val badge: String? = null)
+/** [opts] null = the current settings; set for print queue items, which keep the settings they were added with. */
+data class PrintJob(val token: Token, val art: TokenArt, val copies: Int, val badge: String? = null, val opts: Opts? = null)
+
+/** One entry in the print queue: a token with the settings in use when it was added. */
+data class QueueItem(val id: String, val token: Token, val art: TokenArt, val qty: Int, val opts: Opts)
 
 /** Opens the custom token maker. [linkKey] ties the new art to that token; [name] pre-fills the name. */
 data class CustomEditorRequest(val linkKey: String? = null, val name: String = "")
@@ -612,6 +616,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** The type picked by hand for the current printer, or null when the app works it out. */
+    fun forcedTypeKey(): String? = prefs.lastPrinterType
+
+    /** Reconnects the last printer as [type] (null = detect automatically), so another protocol can be tried. */
+    fun reconnectAs(type: PrinterType?) {
+        val addr = prefs.lastPrinter ?: return
+        viewModelScope.launch {
+            try {
+                printer.connect(addr, prefs.lastPrinterName ?: "", type, prefs.lastPrinterClassic)
+                prefs.lastPrinterType = type?.key
+                syncProfile()
+                notice.value = if (type == null) "Printer type: detected automatically. Print a test page to check."
+                else "Printer type: ${type.appGroup}. Print a test page to check."
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                printer.status.value = "Connect failed: ${e.message}"
+            }
+        }
+    }
+
     private suspend fun ensureConnected() {
         if (printer.link.value == Link.Connected) return
         val addr = prefs.lastPrinter
@@ -958,6 +983,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         printJobs(listOf(PrintJob(token, art, qty.coerceIn(1, 20))))
     }
 
+    // ---------------------------------------------------------- print queue
+
+    /** Kept while the app is running; each item prints with its own saved settings. */
+    val queue = MutableStateFlow<List<QueueItem>>(emptyList())
+    val queueOpen = MutableStateFlow(false)
+
+    fun addToQueue(token: Token, art: TokenArt, qty: Int) {
+        queue.update { it + QueueItem(UUID.randomUUID().toString(), token, art, qty.coerceIn(1, 99), opts.value) }
+        notice.value = "Added to print queue (${queue.value.sumOf { it.qty }} to print). Find it under Decks."
+    }
+
+    fun setQueueQty(id: String, n: Int) = queue.update { l -> l.map { if (it.id == id) it.copy(qty = n.coerceIn(1, 99)) else it } }
+    fun removeFromQueue(id: String) = queue.update { l -> l.filter { it.id != id } }
+    fun clearQueue() {
+        queue.value = emptyList()
+        queueOpen.value = false
+    }
+
+    fun printQueue() {
+        val jobs = queue.value.map { PrintJob(it.token, it.art, it.qty, opts = it.opts) }
+        if (jobs.isNotEmpty()) printJobs(jobs)
+    }
+
     fun printDeck(deckId: String) {
         val deck = decks.value.firstOrNull { it.id == deckId } ?: return
         val map = tokenMap.value
@@ -972,7 +1020,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun printJobs(jobs: List<PrintJob>) {
         if (printRun.value?.finished == false) return
-        val o = opts.value
+        val base = opts.value
         val steps = jobs.sumOf { it.copies }
         runJob?.cancel()
         runJob = viewModelScope.launch {
@@ -983,6 +1031,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ensureConnected()
                 for (job in jobs) {
                     title = job.token.name
+                    val o = job.opts ?: base
                     val url = if (o.fullCard) job.art.cardUrl else job.art.artUrl
                     val bmp = withContext(Dispatchers.IO) { Raster.fetchBitmap(url) }
                     val r = withContext(Dispatchers.Default) {

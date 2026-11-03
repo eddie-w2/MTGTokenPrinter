@@ -252,7 +252,8 @@ fun SettingsTab(
                     val d = vm.printer.detected.value
                     val printerLine = if (d != null) {
                         "${vm.printer.connectedName.value ?: "?"} (connected) · detected as ${d.type.family.label}, ${d.type.widthDots} dots" +
-                            if (d.sure) "" else " (guessed or picked by hand)"
+                            (if (d.sure) "" else " (guessed or picked by hand)") +
+                            (vm.forcedTypeKey()?.let { " · type set by hand: $it" } ?: "")
                     } else {
                         "not connected · last used: ${profile.label}, ${profile.widthDots} dots"
                     }

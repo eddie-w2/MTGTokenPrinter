@@ -121,7 +121,18 @@ class PrinterCatalog private constructor(
         val allOf: Boolean,
     )
 
-    fun byKey(key: String?): PrinterType? = types.firstOrNull { it.key == key } ?: extras.firstOrNull { it.key == key }
+    fun byKey(key: String?): PrinterType? =
+        types.firstOrNull { it.key == key } ?: extras.firstOrNull { it.key == key } ?: nadaD20?.takeIf { it.key == key }
+
+    /** The "D20" sold with the Nada Print app: same commands as the Phomemo M02 (tested on hardware, Nov 2026). */
+    private val nadaD20: PrinterType? by lazy {
+        types.firstOrNull { it.key == "phomemo_m02" }?.let { m ->
+            PrinterType(
+                NADA_D20, "D20", m.family, m.variant, m.widthDots, m.dpi, m.spp, m.mtu, m.rle, m.postFeed, m.speed,
+                m.energy, m.density, listOf("Nada Print"),
+            )
+        }
+    }
 
     /** A choice under "Try as…": named after the app the printer is sold with, since that's what people know. */
     class TryAs(val title: String, val detail: String, val type: PrinterType)
@@ -136,6 +147,7 @@ class PrinterCatalog private constructor(
             byKey("v5x")?.let { TryAs("Fun Print / iBleem", "MXW01 and newer models · 384 dots", it) },
             byKey("phomemo_m02")?.let { TryAs("Phomemo", "M02, T02 and similar · 384 dots", it) },
             byKey("phomemo_m02s")?.let { TryAs("Phomemo", "M02S, M02 Pro (300 dpi) · 576 dots", it) },
+            byKey(NADA_D20)?.let { TryAs("Nada Print", "D20 and similar · 384 dots", it) },
             byKey(ESCPOS_58)?.let { TryAs("Receipt printer", "58 mm ESC/POS · 384 dots", it) },
             byKey(ESCPOS_80)?.let { TryAs("Receipt printer", "80 mm ESC/POS · 576 dots", it) },
         )
@@ -171,6 +183,7 @@ class PrinterCatalog private constructor(
         val upper = name.uppercase()
         if (found.isEmpty()) {
             EXTRA_LX_NAMES.firstOrNull { upper.startsWith(it) }?.let { byKey("funny_lx_d")?.let { t -> found[t.key] = t } }
+            if (upper.trim() in NADA_NAMES) nadaD20?.let { found[it.key] = it }
         }
         return found.values.toList()
     }
@@ -244,7 +257,12 @@ class PrinterCatalog private constructor(
         const val ESCPOS_80 = "escpos_80"
 
         /** Advertised names of printers that have actually been tested with Token Printer. */
-        val TESTED_NAMES = setOf("LX-D02")
+        val TESTED_NAMES = setOf("LX-D02", "D20")
+
+        const val NADA_D20 = "nada_d20"
+
+        /** Exact advertised names of Nada Print printers (not prefixes: "D200" is something else). */
+        private val NADA_NAMES = setOf("D20")
 
         /** Printers that use the Funny Print app but aren't in the catalog (the XenGro AH-M2 is confirmed to use Funny Print). */
         private val EXTRA_LX_NAMES = listOf("AH-M2", "AHM2", "ITW14302", "SWS-PT1", "BH-01")

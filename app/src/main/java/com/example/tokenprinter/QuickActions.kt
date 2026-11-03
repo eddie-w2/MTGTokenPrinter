@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
@@ -121,7 +122,7 @@ class QuickHaptics(ctx: Context, private val fallback: HapticFeedback) {
     fun confirm() = buzz(VibrationEffect.EFFECT_CLICK, 25, 180, HapticFeedbackType.LongPress)
 }
 
-enum class QuickAction(val label: String) { Export("Export"), Print("Print") }
+enum class QuickAction(val label: String) { Export("Export"), Print("Print"), Queue("Add to queue") }
 
 /** Where the lifted card and the two buttons sit, in window pixels. */
 class QuickLayout(
@@ -129,11 +130,15 @@ class QuickLayout(
     val scale: Float,
     val export: Rect,
     val print: Rect,
+    val queue: Rect,
+    /** All three in one row (not enough room above and below the card), so the queue label is shortened. */
+    val row: Boolean,
     private val slop: Float,
 ) {
     fun hit(p: Offset): QuickAction? = when {
         export.inflate(slop).contains(p) -> QuickAction.Export
         print.inflate(slop).contains(p) -> QuickAction.Print
+        queue.inflate(slop).contains(p) -> QuickAction.Queue
         else -> null
     }
 }
@@ -158,6 +163,7 @@ class QuickPress(
 class QuickPressController(
     private val onPrint: (Token, TokenArt, Int) -> Unit,
     private val onExport: (Token, TokenArt) -> Unit,
+    private val onQueue: (Token, TokenArt, Int) -> Unit,
 ) {
     var active by mutableStateOf<QuickPress?>(null)
         private set
@@ -212,6 +218,10 @@ class QuickPressController(
                 haptic?.confirm()
                 onExport(a.token, a.art)
             }
+            QuickAction.Queue -> {
+                haptic?.confirm()
+                onQueue(a.token, a.art, a.qty)
+            }
             null -> Unit
         }
     }
@@ -243,16 +253,39 @@ class QuickPressController(
         val gapY = 26.dp.toPx() // leaves room for the lift and shadow
         val minTop = safeTop + margin
         val maxTop = rh - safeBottom - margin - bh
-        var top = card.bottom + gapY
-        if (top > maxTop) top = card.top - gapY - bh // no room below, so go above
-        top = clampSafe(top, minTop, maxTop)
+        val below = card.bottom + gapY
+        val above = card.top - gapY - bh
+        val roomBelow = below <= maxTop
+        val roomAbove = above >= minTop
+        if (roomBelow && roomAbove) {
+            // Export and Print below the card, Add to queue above it.
+            val qLeft = clampSafe(cx - bw / 2, margin, rw - margin - bw)
+            QuickLayout(
+                card = card,
+                scale = s,
+                export = Rect(left, below, left + bw, below + bh),
+                print = Rect(left + bw + gap, below, left + pairW, below + bh),
+                queue = Rect(qLeft, above, qLeft + bw, above + bh),
+                row = false,
+                slop = 12.dp.toPx(),
+            )
+        } else {
+        // Only one side has room: all three in a row, Add to queue in the middle.
+        val rowGap = 10.dp.toPx()
+        val w3 = minOf(bw, (rw - 2 * margin - 2 * rowGap) / 3f)
+        val rowW = 3 * w3 + 2 * rowGap
+        val l3 = clampSafe(cx - rowW / 2, margin, rw - margin - rowW)
+        val top = clampSafe(if (roomBelow) below else above, minTop, maxTop)
         QuickLayout(
             card = card,
             scale = s,
-            export = Rect(left, top, left + bw, top + bh),
-            print = Rect(left + bw + gap, top, left + pairW, top + bh),
-            slop = 12.dp.toPx(),
+            export = Rect(l3, top, l3 + w3, top + bh),
+            queue = Rect(l3 + w3 + rowGap, top, l3 + 2 * w3 + rowGap, top + bh),
+            print = Rect(l3 + 2 * (w3 + rowGap), top, l3 + rowW, top + bh),
+            row = true,
+            slop = 8.dp.toPx(),
         )
+        }
     }
 }
 
@@ -412,6 +445,7 @@ private fun QuickPressContent(c: QuickPressController, a: QuickPress) {
             a.content(Modifier.fillMaxSize())
         }
         QuickButton(QuickAction.Export, Icons.Filled.Share, l.export, a, vis, delayMs = 40)
+        QuickButton(QuickAction.Queue, Icons.AutoMirrored.Filled.PlaylistAdd, l.queue, a, vis, delayMs = 70, label = if (l.row) "Queue" else null)
         QuickButton(QuickAction.Print, Icons.Filled.Print, l.print, a, vis, delayMs = 100)
     }
 }
@@ -424,6 +458,7 @@ private fun QuickButton(
     a: QuickPress,
     vis: Float,
     delayMs: Int,
+    label: String? = null,
 ) {
     val d = LocalDensity.current
     val hovered = a.hover == action
@@ -470,7 +505,7 @@ private fun QuickButton(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
             Icon(icon, contentDescription = null, tint = fg)
             Spacer(Modifier.width(8.dp))
-            Text(action.label, color = fg, style = MaterialTheme.typography.titleMedium)
+            Text(label ?: action.label, color = fg, style = MaterialTheme.typography.titleMedium, maxLines = 1)
         }
     }
 }

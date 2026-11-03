@@ -18,6 +18,7 @@ Printers are recognised by their Bluetooth name and grouped by the app they come
 | Tiny Print / iPrint | GB01..GB05, GT01, X5, X6, X7 | Experimental |
 | Fun Print / iBleem | MX05..MX13, YT01, BQ series, MXW01 | Experimental |
 | Phomemo | M02, M02X, M02S, M02 Pro, T02 | Experimental |
+| Nada Print | D20 | D20 tested |
 | ESC/POS | 58 mm and 80 mm receipt printers | Experimental |
 
 "Experimental" means the protocol is implemented but nobody has confirmed it on real hardware yet.

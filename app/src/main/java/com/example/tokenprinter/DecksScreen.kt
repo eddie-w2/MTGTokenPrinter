@@ -82,18 +82,23 @@ fun DecksTab(vm: MainViewModel, onImport: () -> Unit, modifier: Modifier = Modif
     val map by vm.tokenMap.collectAsStateWithLifecycle()
     val favArts by vm.favArts.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf<Deck?>(null) }
+    val queue by vm.queue.collectAsStateWithLifecycle()
 
     if (decks.isEmpty()) {
+        Column(modifier.fillMaxSize()) {
+        if (queue.isNotEmpty()) QueueCard(vm, Modifier.padding(top = 8.dp))
         EmptyState(
             title = "No decks yet",
             body = "Import a deck list and Token Printer works out every token it needs, " +
                 "then keeps them together in a folder so you can print the whole set in one go.",
-            modifier = modifier.fillMaxSize(),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
         ) {
             Button(onClick = onImport) { Text("Import a deck") }
         }
+        }
     } else {
         LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp)) {
+            if (queue.isNotEmpty()) item(key = "print-queue") { QueueCard(vm) }
             items(decks, key = { it.id }) { d ->
                 Card(
                     onClick = { vm.selectedDeckId.value = d.id },

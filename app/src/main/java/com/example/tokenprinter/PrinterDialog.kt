@@ -12,15 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -78,13 +74,13 @@ fun PrinterDialog(vm: MainViewModel, withBle: (() -> Unit) -> Unit, onClose: () 
                 if (found.isEmpty()) {
                     Text(
                         "Switch the printer on, close its own app, tap Scan, then pick the printer. Printers are listed under the app they " +
-                            "came with: Funny Print, Tiny Print / iPrint, Fun Print / iBleem, Phomemo, or receipt printers.",
+                            "came with: Funny Print, Tiny Print / iPrint, Fun Print / iBleem, Phomemo, Nada Print, or receipt printers.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
                 // Grouped by the app the printer is sold with: that's the name people know from the box.
                 val groups = printers.groupBy { it.types.firstOrNull()?.appGroup ?: "Other printers" }
-                val order = listOf("Funny Print", "Tiny Print / iPrint", "Fun Print / iBleem", "Phomemo", "Receipt printers")
+                val order = listOf("Funny Print", "Tiny Print / iPrint", "Fun Print / iBleem", "Phomemo", "Nada Print", "Receipt printers")
                 groups.keys.sortedWith(compareBy<String> { order.indexOf(it).let { i -> if (i < 0) 99 else i } }.thenBy { it })
                     .forEach { app ->
                         Text(
@@ -102,7 +98,7 @@ fun PrinterDialog(vm: MainViewModel, withBle: (() -> Unit) -> Unit, onClose: () 
                     if (showOthers) {
                         Text(
                             "Token Printer doesn't recognise these names. If one is your printer, tap it to let the app work out its type, " +
-                                "or use ⋮ to pick one. Then print a test page.",
+                                "or tap Type to pick the app it came with. Then print a test page.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -164,10 +160,10 @@ private fun FoundRow(vm: MainViewModel, f: FoundPrinter, withBle: (() -> Unit) -
         }
         if (f.rssi > -100) Text("${f.rssi} dBm", style = MaterialTheme.typography.labelSmall)
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Try as a printer type") }
+            TextButton(onClick = { menu = true }) { Text("Type") }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 Text(
-                    "Try as…",
+                    "Connect as…",
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
@@ -222,11 +218,45 @@ fun PrinterTypeLine(vm: MainViewModel) {
         )
         if (!tested) {
             Text(
-                "Nobody has confirmed this printer works with Token Printer yet. Print a test page; if it looks wrong, try " +
-                    "another type with ⋮ next to it in the scan list, and let me know (Settings > Help > Report a bug).",
+                "Nobody has confirmed this printer works with Token Printer yet. Print a test page; if it looks wrong, tap " +
+                    "Change printer type and try the app your printer came with, and let me know (Settings > Help > Report a bug).",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        ChangeTypeButton(vm, d.type)
+    }
+}
+
+/** Reconnects the current printer as another type (or lets the app work it out again), for testing what works. */
+@Composable
+private fun ChangeTypeButton(vm: MainViewModel, current: PrinterType) {
+    var open by remember { mutableStateOf(false) }
+    val forced = vm.forcedTypeKey()
+    Box {
+        OutlinedButton(onClick = { open = true }) { Text("Change printer type") }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = {
+                    Column {
+                        Text((if (forced == null) "✓ " else "") + "Detect automatically")
+                        Text("Let the app work out the type", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                onClick = { open = false; vm.reconnectAs(null) },
+            )
+            HorizontalDivider()
+            vm.printer.catalog.tryAs.forEach { opt ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text((if (forced != null && opt.type.key == current.key) "✓ " else "") + opt.title)
+                            Text(opt.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    },
+                    onClick = { open = false; vm.reconnectAs(opt.type) },
+                )
+            }
         }
     }
 }

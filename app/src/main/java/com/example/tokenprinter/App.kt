@@ -79,10 +79,12 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
     val updateDialog by vm.updateDialog.collectAsStateWithLifecycle()
 
     val deck = decks.firstOrNull { it.id == deckId }
+    val queueOpen by vm.queueOpen.collectAsStateWithLifecycle()
     // Look the token up again so the detail screen sees new or deleted custom art straight away.
     val sel = selected?.let { tokenMap[it.key] }
     BackHandler(enabled = sel != null) { vm.selected.value = null }
     BackHandler(enabled = sel == null && deck != null) { vm.selectedDeckId.value = null }
+    BackHandler(enabled = sel == null && deck == null && queueOpen) { vm.queueOpen.value = false }
     BackHandler(enabled = showFaq) { showFaq = false }
 
     LaunchedEffect(notice) {
@@ -104,6 +106,7 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
         QuickPressController(
             onPrint = { t, a, q -> ble { vm.quickPrint(t, a, q) } },
             onExport = { t, a -> vm.quickExport(t, a) { uri: Uri -> ctx.startActivity(TokenExport.shareIntent(uri)) } },
+            onQueue = { t, a, q -> vm.addToQueue(t, a, q) },
         )
     }
     val density = LocalDensity.current
@@ -120,6 +123,7 @@ fun App(vm: MainViewModel, withBle: (() -> Unit) -> Unit) {
                     showFaq -> FaqScreen(vm, onBack = { showFaq = false })
                     sel != null -> TokenDetailScreen(vm, sel, onBack = { vm.selected.value = null })
                     deck != null -> DeckDetailScreen(vm, deck, withBle, onBack = { vm.selectedDeckId.value = null })
+                    queueOpen -> PrintQueueScreen(vm, withBle, onBack = { vm.queueOpen.value = false })
                     else -> MainShell(
                         vm = vm,
                         tab = tab,

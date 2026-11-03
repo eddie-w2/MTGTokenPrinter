@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.07
+- New print queue: press and hold a token and slide to Add to queue. Each token keeps the settings it was added with, so you can change settings between tokens and print them all at once. Find it at the top of the Decks tab.
+- Change printer type: once connected, the Printer window and Settings have a button to try your printer as another type (or detect it automatically again). In the scan list, tap Type next to a printer.
+- D20 printers (Nada Print app) are recognised automatically and marked Tested.
+
 ## 0.9.06
 - Search puts the best matches first: exact names, then names containing the whole word (like "Rat Rogue"), then tokens of that creature type, and partial matches (like "Pirate") last.
 - Fixed the extra gap above the last line of rules text on prints.

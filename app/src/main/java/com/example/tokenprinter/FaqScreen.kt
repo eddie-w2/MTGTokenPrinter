@@ -64,9 +64,9 @@ private val faqGroups = listOf(
             ),
             FaqEntry(
                 "What printers are currently supported?",
-                "It is built for the YTETCN / Funny Print printers, which show up as LX-D02. That is the one printer that has been tested. Other Funny Print printers, like the XenGro AH-M2, use the same commands.\n" +
+                "It is built for the YTETCN / Funny Print printers, which show up as LX-D02. That is the one printer that has been tested. Other Funny Print printers, like the XenGro AH-M2, use the same commands. The D20 (sold with the Nada Print app) has been tested too.\n" +
                     "\n" +
-                    "It also recognises around 80 other models by their Bluetooth name: printers that use the Funny Print, Tiny Print, iPrint, Fun Print, iBleem and Phomemo apps (for example GB01, X6, MX06, MXW01, YT01, Phomemo M02 and T02), plus basic 58 mm and 80 mm receipt printers. These are marked Experimental until someone confirms they work.\n" +
+                    "It also recognises around 80 other models by their Bluetooth name: printers that use the Funny Print, Tiny Print, iPrint, Fun Print, iBleem, Phomemo and Nada Print apps (for example GB01, X6, MX06, MXW01, YT01, Phomemo M02 and T02), plus basic 58 mm and 80 mm receipt printers. These are marked Experimental until someone confirms they work.\n" +
                     "\n" +
                     "For printers it can't connect to yet, you can export a token as a JPEG and print it from that printer's own app (see Exporting images).",
             ),
@@ -81,7 +81,7 @@ private val faqGroups = listOf(
                 "1. Switch the printer on.\n" +
                     "2. Close the default printing app you use if it is open. Only one app can talk to the printer at a time.\n" +
                     "3. Tap the Connect button at the top right of the app.\n" +
-                    "4. Tap Scan, then pick your printer. Printers the app recognises are listed first, grouped by the app they came with (Funny Print, Tiny Print / iPrint, Fun Print / iBleem, Phomemo).\n" +
+                    "4. Tap Scan, then pick your printer. Printers the app recognises are listed first, grouped by the app they came with (Funny Print, Tiny Print / iPrint, Fun Print / iBleem, Phomemo, Nada Print).\n" +
                     "5. Allow the Bluetooth permission when Android asks.\n" +
                     "\n" +
                     "The button changes to Ready once it is connected, and the app remembers the printer for next time. Settings > Printer > Test page prints a pattern so you can check everything works. If there are any issues, there are additional printer settings within the settings menu.",
@@ -151,11 +151,17 @@ private val faqGroups = listOf(
         listOf(
             FaqEntry(
                 "How does long press work?",
-                "Press and hold any token card: in the token list or grid, in a deck, or in a token's list of printings. The card swells, then pops up, the background blurs, and two buttons appear: Export and Print.\n" +
+                "Press and hold any token card: in the token list or grid, in a deck, or in a token's list of printings. The card swells, then pops up, the background blurs, and three buttons appear: Add to queue above the card, and Export and Print below it (when there isn't room above and below, all three sit in one row with Add to queue in the middle).\n" +
                     "\n" +
                     "Without lifting your finger, slide onto a button and let go to do it straight away. Let go anywhere else to cancel.\n" +
                     "\n" +
-                    "Print uses your saved settings and prints one copy. From a deck it prints the count that token has in the deck. Export repeats whatever you last chose in the Export window.",
+                    "Print uses your saved settings and prints one copy. From a deck it prints the count that token has in the deck. Export repeats whatever you last chose in the Export window. Add to queue puts it in the print queue (see below).",
+            ),
+            FaqEntry(
+                "What is the print queue?",
+                "A list of tokens to print together, where each token keeps the settings it was added with (art or whole card, caption, font, contrast, spacing and so on). Change the settings, queue the next token, and repeat; then print them all at once.\n" +
+                    "\n" +
+                    "Press and hold a token and slide to Add to queue. The queue shows at the top of the Decks tab. Open it to change how many copies, remove a token with the bin, clear everything with Clear all, or tap Print all. The queue is kept until you close the app.",
             ),
         ),
     ),
@@ -260,7 +266,7 @@ private val faqGroups = listOf(
                 "The app can't find my printer.",
                 "Switch the printer on, close the manufacturer’s app, make sure Bluetooth is on, and tap Scan again. Move the phone close to the printer. Allow the Bluetooth permission if Android asks (older Android versions ask for Location instead, which Bluetooth scanning needs there).\n" +
                     "\n" +
-                    "If it isn't in the list, tap \"Show other Bluetooth devices\" and tap your printer: the app checks what it is when it connects. You can also tap ⋮ next to it (Try as…) and pick the app your printer came with, then print a test page.\n" +
+                    "If it isn't in the list, tap \"Show other Bluetooth devices\" and tap your printer: the app checks what it is when it connects. You can also tap Type next to it and pick the app your printer came with, then print a test page. Once connected, the Printer window and Settings have a Change printer type button to try another type (or go back to Detect automatically).\n" +
                     "\n" +
                     "Your printer might not be supported yet. If that is the case reach out and let me know what printer you're using and I will do my best to add compatibility! You can reach me from Settings > Help > Contact me.",
             ),
