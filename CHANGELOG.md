@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.05
+- Fixed: tokens with the same name, type and power/toughness but different abilities were merged into one, so they shared art and abilities (for example every black 1/1 Rat showed Deathtouch). They are now separate tokens.
+- Tokens without keyword abilities show the start of their rules text in the list, so look-alikes are easy to tell apart.
+- Your favorites, decks and custom art move over to the right token automatically.
+
 ## 0.9.04
 - Report a bug now opens an email with a short form to fill in, plus your app version, phone and printer details already added.
 - The Legal section in Settings folds away; tap its title to open it.

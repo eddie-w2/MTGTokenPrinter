@@ -150,9 +150,12 @@ fun HeartButton(on: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier,
 /** Keyword abilities (Flying, Vigilance, ...) shown above the power/toughness. */
 @Composable
 fun KeywordLine(t: Token, modifier: Modifier = Modifier) {
-    if (t.keywords.isNotEmpty()) {
+    // Keywords if it has any, otherwise the start of its rules text, so look-alike tokens (several black 1/1 Rats)
+    // can be told apart in the list.
+    val line = t.keywordText.ifEmpty { t.oracle.lineSequence().firstOrNull()?.trim().orEmpty() }
+    if (line.isNotEmpty()) {
         Text(
-            t.keywordText,
+            line,
             modifier = modifier,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.tertiary,

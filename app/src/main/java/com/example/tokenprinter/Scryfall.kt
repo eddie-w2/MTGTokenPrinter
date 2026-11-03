@@ -113,7 +113,12 @@ private data class Flat(
     val setCode: String, val artist: String, val number: String, val released: String,
     val keywords: String,
 ) {
-    val key: String get() = "$name|$typeLine|$pt|$colors"
+    /**
+     * Tokens are grouped by name, type, power/toughness, colors AND rules text: two black 1/1 Rats with different
+     * abilities are different tokens (until 0.9.05 the rules text was left out, so they were merged and shared one
+     * set of abilities). The rules part is a short fingerprint so keys stay readable and stable between syncs.
+     */
+    val key: String get() = "${baseKey(name, typeLine, pt, colors)}|${rulesId(oracle)}"
 
     fun toJson() = JSONObject().apply {
         put("id", id); put("name", name); put("type", typeLine); put("pt", pt); put("colors", colors)
@@ -131,6 +136,18 @@ private data class Flat(
         )
     }
 }
+
+/** The token key used before 0.9.05 (no rules text); stored favorites, decks and custom links may still hold it. */
+fun baseKey(name: String, typeLine: String, pt: String, colors: String) = "$name|$typeLine|$pt|$colors"
+
+/** Fingerprint of a token's rules text, ignoring case and spacing differences between printings. */
+fun rulesId(oracle: String): String {
+    val norm = oracle.lowercase().replace(Regex("\\s+"), " ").trim()
+    return if (norm.isEmpty()) "-" else "%08x".format(norm.hashCode())
+}
+
+/** True for a key in the pre-0.9.05 format (name|type|pt|colors), which can match several tokens now. */
+fun isLegacyKey(key: String) = !key.startsWith("custom|") && key.count { it == '|' } == 3
 
 private fun JSONObject.s(k: String): String = if (has(k) && !isNull(k)) getString(k) else ""
 

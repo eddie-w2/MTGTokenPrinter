@@ -354,6 +354,56 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------------------ token sync
 
+    init {
+        // 0.9.05 added the rules text to token keys. Favorites, deck entries and custom art saved with an older key
+        // are moved to the matching token once the list is loaded.
+        viewModelScope.launch { scryTokens.collect { if (it.isNotEmpty()) migrateLegacyKeys(it) } }
+    }
+
+    private fun migrateLegacyKeys(list: List<Token>) {
+        val byKey = list.associateBy { it.key }
+        val byBase = list.groupBy { it.key.substringBeforeLast('|') }
+        val fa = favArts.value
+        /** The token an old key now means: the one holding [artId] if given, then one with a favorite printing, then the biggest. */
+        fun resolve(old: String, artId: String? = null): String? {
+            if (!isLegacyKey(old) || byKey.containsKey(old)) return null
+            val cands = byBase[old] ?: return null
+            val pick = artId?.let { id -> cands.firstOrNull { t -> t.arts.any { it.id == id } } }
+                ?: cands.firstOrNull { t -> t.arts.any { it.id in fa } }
+                ?: cands.maxByOrNull { it.arts.size }
+            return pick?.key
+        }
+
+        val favs = favorites.value
+        if (favs.any { resolve(it) != null }) {
+            val next = favs.map { resolve(it) ?: it }.toSet()
+            favorites.value = next
+            prefs.saveFavorites(next)
+        }
+
+        var decksChanged = false
+        val newDecks = decks.value.map { d ->
+            if (d.entries.none { isLegacyKey(it.tokenKey) }) d
+            else {
+                val moved = d.entries.map { e -> resolve(e.tokenKey, e.artId)?.let { k -> decksChanged = true; e.copy(tokenKey = k) } ?: e }
+                // Two old entries can land on the same token: keep one, adding the counts.
+                val merged = moved.groupBy { it.tokenKey }.map { (_, es) -> es.first().copy(qty = es.sumOf { it.qty }.coerceAtMost(99)) }
+                d.copy(entries = merged)
+            }
+        }
+        if (decksChanged) {
+            decks.value = newDecks
+            persistDecks()
+        }
+
+        val cs = customs.value
+        if (cs.any { c -> c.linkedKey?.let { resolve(it) } != null }) {
+            val updated = cs.map { c -> c.linkedKey?.let { resolve(it) }?.let { k -> c.copy(linkedKey = k) } ?: c }
+            customs.value = updated
+            customStore.save(updated)
+        }
+    }
+
     fun load(force: Boolean) {
         if (loading.value) return
         if (force) {
