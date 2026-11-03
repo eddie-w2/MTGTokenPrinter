@@ -58,6 +58,7 @@ object Backup {
             put("capFont", opts.capFont)
             put("capBold", opts.capBold)
             put("capPt", opts.capPt)
+            put("ptRight", opts.ptRight)
             put("capKeywords", opts.capKeywords)
             put("capRules", opts.capRules)
             put("trimSpace", opts.trimSpace)
@@ -101,6 +102,7 @@ object Backup {
                 capFont = it.optString("capFont", current.capFont),
                 capBold = it.optBoolean("capBold", current.capBold),
                 capPt = it.optBoolean("capPt", current.capPt),
+                ptRight = it.optBoolean("ptRight", current.ptRight),
                 capKeywords = it.optBoolean("capKeywords", current.capKeywords),
                 capRules = it.optBoolean("capRules", current.capRules),
                 trimSpace = it.optBoolean("trimSpace", current.trimSpace),

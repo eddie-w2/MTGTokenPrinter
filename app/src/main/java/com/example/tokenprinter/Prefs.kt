@@ -49,6 +49,10 @@ class Prefs(ctx: Context) {
     var capBold: Boolean
         get() = sp.getBoolean("capBold", true)
         set(v) = sp.edit().putBoolean("capBold", v).apply()
+    /** Power/toughness on its own line in the bottom right corner of the caption instead of centered. */
+    var ptRight: Boolean
+        get() = sp.getBoolean("ptRight", false)
+        set(v) = sp.edit().putBoolean("ptRight", v).apply()
     var capPt: Boolean
         get() = sp.getBoolean("capPt", true)
         set(v) = sp.edit().putBoolean("capPt", v).apply()

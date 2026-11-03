@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.06
+- Search puts the best matches first: exact names, then names containing the whole word (like "Rat Rogue"), then tokens of that creature type, and partial matches (like "Pirate") last.
+- Fixed the extra gap above the last line of rules text on prints.
+- New option: Settings > Caption text > Power/toughness in the bottom right.
+
 ## 0.9.05
 - Fixed: tokens with the same name, type and power/toughness but different abilities were merged into one, so they shared art and abilities (for example every black 1/1 Rat showed Deathtouch). They are now separate tokens.
 - Tokens without keyword abilities show the start of their rules text in the list, so look-alikes are easy to tell apart.

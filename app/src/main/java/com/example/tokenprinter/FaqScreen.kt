@@ -238,6 +238,10 @@ private val faqGroups = listOf(
                 "Settings > Backup and restore > Save backup. It makes one file with your favorites, decks, custom tokens and settings. Restore backup adds what is in the file to what is already on the phone, and never deletes anything.",
             ),
             FaqEntry(
+                "Can the power/toughness go in the corner?",
+                "Yes. Settings > Caption text > Power/toughness in the bottom right puts it on its own line in the bottom right corner, like on a real card. The rest of the text stays centered.",
+            ),
+            FaqEntry(
                 "What is the small \"Art:\" text on my prints?",
                 "It credits the artist who painted the token's art. Token Printer gets its card images from Scryfall, and Scryfall asks apps that use its images to credit the artist. It is on by default, but you can turn it off in Settings > Caption text > Artist credit. Whole-card prints already show the artist on the card, so the line is left off those.",
             ),

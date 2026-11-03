@@ -11,7 +11,9 @@ import android.graphics.Paint
 import android.net.Uri
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.text.style.AlignmentSpan
 import android.text.style.RelativeSizeSpan
+import android.text.Layout
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -43,6 +45,8 @@ data class Opts(
     val capFont: String,
     val capBold: Boolean,
     val capPt: Boolean,
+    /** Power/toughness right-aligned on its own last line instead of centered. */
+    val ptRight: Boolean,
     val capKeywords: Boolean,
     val capRules: Boolean,
     val trimSpace: Boolean,
@@ -188,6 +192,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             capFont = prefs.capFont,
             capBold = prefs.capBold,
             capPt = prefs.capPt,
+            ptRight = prefs.ptRight,
             capKeywords = prefs.capKeywords,
             capRules = prefs.capRules,
             trimSpace = prefs.trimSpace,
@@ -230,12 +235,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             textOk && colorOk && favOk && typeOk && setOk && customOk
         }
         val byName = compareBy<Token>({ it.name.lowercase() }, { it.pt }, { it.colors })
-        when (f.sort) {
-            SortMode.NameAsc -> filtered.sortedWith(byName)
-            SortMode.NameDesc -> filtered.sortedWith(byName.reversed())
-            SortMode.ReleaseDesc -> filtered.sortedWith(compareByDescending<Token> { it.newest }.then(byName))
-            SortMode.ReleaseAsc -> filtered.sortedWith(compareBy<Token> { it.oldest }.then(byName))
+        val order = when (f.sort) {
+            SortMode.NameAsc -> byName
+            SortMode.NameDesc -> byName.reversed()
+            SortMode.ReleaseDesc -> compareByDescending<Token> { it.newest }.then(byName)
+            SortMode.ReleaseAsc -> compareBy<Token> { it.oldest }.then(byName)
         }
+        // While searching, the best matches come first; the chosen sort order applies within each level.
+        if (s.isEmpty()) filtered.sortedWith(order)
+        else filtered.map { it to searchRank(it, s) }
+            .sortedWith(compareBy<Pair<Token, Int>> { it.second }.thenBy(order) { it.first })
+            .map { it.first }
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
@@ -658,17 +668,38 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val pt = if (o.capPt) token.pt else ""
         val sb = SpannableStringBuilder(token.name)
         val single = o.capSingleLine
+        var lastScale = 1f
+        // A line break belongs to the line before it, so it gets that line's size. A full-size break at the end of a
+        // small line made that line as tall as the big text and left an extra gap above it (most visible before the
+        // last line of rules text).
+        fun lineBreak() {
+            val start = sb.length
+            sb.append("\n")
+            if (lastScale != 1f) sb.setSpan(RelativeSizeSpan(lastScale), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
         fun small(text: String, scale: Float) {
-            sb.append(if (single) "  " else "\n")
+            if (single) sb.append("  ") else lineBreak()
             val start = sb.length
             sb.append(if (single) text.replace(Regex("\\s*\\n\\s*"), " ") else text)
             sb.setSpan(RelativeSizeSpan(scale), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            lastScale = scale
         }
         if (art.note.isNotBlank()) small(art.note.trim(), 0.8f)
         if (rules.isNotEmpty()) small(rules, 0.62f)
         else if (kw.isNotEmpty()) small(kw, 0.72f)
         if (pt.isNotEmpty()) {
-            if (!single && sb.contains('\n')) sb.append("\n").append(pt) else sb.append("  ").append(pt)
+            if (o.ptRight) {
+                // Its own last line, pushed to the right edge; everything above stays centered.
+                lineBreak()
+                val start = sb.length
+                sb.append(pt)
+                sb.setSpan(AlignmentSpan.Standard(Layout.Alignment.ALIGN_OPPOSITE), start, sb.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+            } else if (!single && sb.contains('\n')) {
+                lineBreak()
+                sb.append(pt)
+            } else {
+                sb.append("  ").append(pt)
+            }
         }
         return sb
     }
@@ -772,6 +803,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         prefs.capFont = o.capFont
         prefs.capBold = o.capBold
         prefs.capPt = o.capPt
+        prefs.ptRight = o.ptRight
         prefs.capKeywords = o.capKeywords
         prefs.capRules = o.capRules
         prefs.trimSpace = o.trimSpace
@@ -1136,3 +1168,26 @@ sealed interface UpdateState {
 }
 
 private const val SYNC_COOLDOWN_MS = 15 * 60 * 1000L
+
+private val SEARCH_WORD_BREAK = Regex("[^\\p{L}\\p{N}']+")
+
+/**
+ * How well a token matches a search, lower is better:
+ * 0 the name is exactly the search ("Rat"), 1 the name contains it as a whole word ("Rat Rogue", "Pirate Rat"),
+ * 2 a word in the name starts with it ("Ratchet"), 3 it is a whole word of the type line (a Rat creature with
+ * another name), 4 it appears inside the name ("Pirate"), 5 it only appears in the type, keywords or set name.
+ */
+internal fun searchRank(t: Token, q: String): Int {
+    val words = SEARCH_WORD_BREAK
+    val name = t.name.lowercase()
+    if (name == q) return 0
+    val nameWords = name.split(words).filter { it.isNotEmpty() }
+    val qWords = q.split(words).filter { it.isNotEmpty() }
+    fun hasPhrase(list: List<String>): Boolean =
+        qWords.isNotEmpty() && (0..list.size - qWords.size).any { i -> qWords.indices.all { j -> list[i + j] == qWords[j] } }
+    if (hasPhrase(nameWords)) return 1
+    if (qWords.size == 1 && nameWords.any { it.startsWith(qWords[0]) }) return 2
+    if (hasPhrase(t.typeLine.lowercase().split(words).filter { it.isNotEmpty() })) return 3
+    if (name.contains(q)) return 4
+    return 5
+}

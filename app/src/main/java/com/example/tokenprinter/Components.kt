@@ -326,6 +326,13 @@ fun CaptionControls(o: Opts, onChange: (Opts) -> Unit) {
                 ToggleRow("Show keyword abilities", o.capKeywords) { onChange(o.copy(capKeywords = it)) }
                 ToggleRow("Show full rules text", o.capRules, "Emblems always show theirs.") { onChange(o.copy(capRules = it)) }
                 ToggleRow("Show power/toughness", o.capPt) { onChange(o.copy(capPt = it)) }
+                AnimatedVisibility(visible = o.capPt) {
+                    ToggleRow(
+                        "Power/toughness in the bottom right",
+                        o.ptRight,
+                        "Off: centered under the text. On: in the bottom right corner, like on a real card. The rest of the text stays centered.",
+                    ) { onChange(o.copy(ptRight = it)) }
+                }
             }
         }
     }
