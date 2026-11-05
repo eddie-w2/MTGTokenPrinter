@@ -12,14 +12,18 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -63,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -245,8 +251,8 @@ class QuickPressController(
         val cy = bounds.center.y
         val card = Rect(cx - cw / 2, cy - ch / 2, cx + cw / 2, cy + ch / 2)
 
-        val bw = 136.dp.toPx()
-        val bh = 60.dp.toPx()
+        val bw = 116.dp.toPx()
+        val bh = 76.dp.toPx()
         val gap = 14.dp.toPx()
         val pairW = 2 * bw + gap
         val left = clampSafe(cx - pairW / 2, margin, rw - margin - pairW)
@@ -444,12 +450,16 @@ private fun QuickPressContent(c: QuickPressController, a: QuickPress) {
         ) {
             a.content(Modifier.fillMaxSize())
         }
-        QuickButton(QuickAction.Export, Icons.Filled.Share, l.export, a, vis, delayMs = 40)
-        QuickButton(QuickAction.Queue, Icons.AutoMirrored.Filled.PlaylistAdd, l.queue, a, vis, delayMs = 70, label = if (l.row) "Queue" else null)
-        QuickButton(QuickAction.Print, Icons.Filled.Print, l.print, a, vis, delayMs = 100)
+        QuickButton(QuickAction.Export, Icons.Filled.Share, l.export, a, vis, delayMs = 30)
+        QuickButton(QuickAction.Queue, Icons.AutoMirrored.Filled.PlaylistAdd, l.queue, a, vis, delayMs = 60)
+        QuickButton(QuickAction.Print, Icons.Filled.Print, l.print, a, vis, delayMs = 90)
     }
 }
 
+/**
+ * A tile with the icon over its label. It slides out from behind the lifted card, and while the finger is over it
+ * it fills with the accent color, swells and its corners soften into a rounder blob, so the choice feels alive.
+ */
 @Composable
 private fun QuickButton(
     action: QuickAction,
@@ -458,7 +468,6 @@ private fun QuickButton(
     a: QuickPress,
     vis: Float,
     delayMs: Int,
-    label: String? = null,
 ) {
     val d = LocalDensity.current
     val hovered = a.hover == action
@@ -466,17 +475,19 @@ private fun QuickButton(
     val appear = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         delay(delayMs.toLong())
-        appear.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium))
+        appear.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow))
     }
     val grow by animateFloatAsState(
         targetValue = when {
-            picked -> 1.3f
-            hovered -> 1.14f
+            picked -> 1.22f
+            hovered -> 1.1f
             else -> 1f
         },
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium),
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium),
         label = "quickBtnScale",
     )
+    val corner by animateDpAsState(if (hovered) 38.dp else 22.dp, spring(dampingRatio = 0.6f), label = "quickBtnCorner")
+    val iconLift by animateDpAsState(if (hovered) (-3).dp else 0.dp, spring(dampingRatio = 0.5f), label = "quickBtnIcon")
     val bg by animateColorAsState(
         if (hovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
         label = "quickBtnBg",
@@ -485,27 +496,44 @@ private fun QuickButton(
         if (hovered) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
         label = "quickBtnFg",
     )
+    val from = a.layout.card.center - rect.center
+    val shape = RoundedCornerShape(corner)
+    // Labels must fit the tile: follow the phone's font size, but only up to a point.
+    val capped = Density(d.density, minOf(d.fontScale, 1.15f))
     Box(
         Modifier
             .offset { IntOffset(rect.left.roundToInt(), rect.top.roundToInt()) }
             .size(with(d) { rect.width.toDp() }, with(d) { rect.height.toDp() })
             .graphicsLayer {
                 val p = appear.value
-                val sc = (0.55f + 0.45f * p) * grow
+                val back = 1f - p
+                translationX = from.x * back * 0.6f
+                translationY = from.y * back * 0.6f
+                val sc = (0.4f + 0.6f * p) * grow
                 scaleX = sc
                 scaleY = sc
                 alpha = p.coerceIn(0f, 1f) * vis
-                shadowElevation = (if (hovered) 18.dp else 8.dp).toPx()
-                shape = RoundedCornerShape(50)
+                shadowElevation = (if (hovered) 20.dp else 10.dp).toPx()
+                this.shape = shape
                 clip = false
             }
-            .background(bg, RoundedCornerShape(50)),
+            .background(bg, shape)
+            .border(1.dp, fg.copy(alpha = if (hovered) 0f else 0.12f), shape),
         contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            Icon(icon, contentDescription = null, tint = fg)
-            Spacer(Modifier.width(8.dp))
-            Text(label ?: action.label, color = fg, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+        CompositionLocalProvider(LocalDensity provides capped) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(26.dp).offset(y = iconLift))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    action.label,
+                    color = fg,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (hovered) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
         }
     }
 }

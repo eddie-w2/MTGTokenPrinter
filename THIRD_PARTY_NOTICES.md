@@ -32,3 +32,8 @@ The Venmo, Bitcoin and Dogecoin logos in `app/src/main/res/drawable/ic_tip_*.xml
 Card data and images come from the Scryfall API (https://scryfall.com) at run time and are not part of this repository.
 Magic: The Gathering is © Wizards of the Coast LLC. Token Printer is unofficial Fan Content permitted under the
 Wizards of the Coast Fan Content Policy. Not approved or endorsed by Wizards. It must stay free.
+
+## ZXing core (Apache License 2.0)
+Copyright ZXing authors — https://github.com/zxing/zxing
+
+- Used as a library to draw the QR code printed from Settings > Share.

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -175,6 +176,7 @@ private fun MainShell(
     val info by vm.printer.info.collectAsStateWithLifecycle()
     val grid by vm.gridView.collectAsStateWithLifecycle()
     var showFilters by remember { mutableStateOf(false) }
+    var showShare by remember { mutableStateOf(false) }
     val tabs = listOf(
         Tab("Tokens", Icons.Filled.Style),
         Tab("Decks", Icons.Filled.Folder),
@@ -194,6 +196,11 @@ private fun MainShell(
                                 if (grid) Icons.Filled.Menu else Icons.Filled.GridView,
                                 contentDescription = if (grid) "Show as list" else "Show as grid",
                             )
+                        }
+                    }
+                    if (tab == 2) {
+                        IconButton(onClick = { showShare = true }) {
+                            Icon(Icons.Filled.Share, contentDescription = "Share Token Printer")
                         }
                     }
                     AssistChip(
@@ -262,6 +269,7 @@ private fun MainShell(
             }
         },
     ) { pad ->
+        if (showShare) ShareDialog(vm, withBle, onClose = { showShare = false })
         when (tab) {
             0 -> TokensTab(vm, Modifier.padding(pad))
             1 -> DecksTab(vm, onImport, Modifier.padding(pad))

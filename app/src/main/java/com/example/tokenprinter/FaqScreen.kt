@@ -71,6 +71,10 @@ private val faqGroups = listOf(
                     "For printers it can't connect to yet, you can export a token as a JPEG and print it from that printer's own app (see Exporting images).",
             ),
             FaqEntry(
+                "Which printers do you recommend?",
+                "Check the GitHub page (Settings > Legal > Source code, or the releases page you installed from). The recommended printers are listed there and kept up to date as more are tested.",
+            ),
+            FaqEntry(
                 "Why does it download tokens the first time I open it?",
                 "The first launch downloads the token list from Scryfall. That needs internet and can take a minute. After that the list is saved on your phone, so you can browse without a connection.\n" +
                     "\n" +
@@ -312,8 +316,16 @@ private val faqGroups = listOf(
                 "Yes. Token Printer is free software under the GNU General Public License v3.0 (or later). The source code is on GitHub: Settings > Legal > Source code. Printer reports and fixes are welcome there.",
             ),
             FaqEntry(
+                "Will it come to the Google Play Store or the Apple App Store?",
+                "I would love to put Token Printer on the Google Play Store. To get there I need a group of beta testers, and I'm still putting that group together. If you'd like to help, let me know with Settings > Help > Contact me!\n\nThere are no plans for an Apple App Store version at this time.",
+            ),
+            FaqEntry(
+                "How can I share Token Printer?",
+                "Tap the share button at the top of Settings. Share the link sends the GitHub link to any app (it's also copied to the clipboard). Print a QR code prints a sticker titled MTG Token Printer with a QR code and the link written under it, handy for a deck box or your game store's table.",
+            ),
+            FaqEntry(
                 "How can I support the project?",
-                "Testing and feedback help the most: tell me which printers work for you (Settings > Help > Contact me, or a printer report on GitHub), and report anything that looks wrong.\n\nDonations are also appreciated. They go towards buying more printers to test with and general development costs. The tip links are at the bottom of Settings.",
+                "Testing and feedback help the most: tell me which printers work for you (Settings > Help > Contact me, or a printer report on GitHub), and report anything that looks wrong. Sharing the app with other players helps a lot too (the share button at the top of Settings).\n\nDonations are also appreciated. They go towards buying more printers to test with and general development costs. The tip links are at the bottom of Settings.",
             ),
         ),
     ),

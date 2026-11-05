@@ -776,6 +776,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Prints a QR code sticker linking to the project on GitHub (Settings > Share). */
+    fun printQrCode() {
+        if (printRun.value?.finished == false) return
+        testRunJob?.cancel()
+        testRunJob = viewModelScope.launch {
+            try {
+                printRun.value = PrintRun("QR code", 1, 1)
+                ensureConnected()
+                val o = opts.value
+                val r = withContext(Dispatchers.Default) {
+                    Raster.render(ShareApp.qrPage(profile.value.widthDots), null, captionStyle(o), 1.0f, o.invert, o.lsbFirst, o.trimSpace, profile.value)
+                }
+                printRun.update { it?.copy(preview = r.preview) }
+                printBits(r.bits, o) { s, t -> printRun.update { it?.copy(progress = s.toFloat() / t) } }
+                printRun.update { it?.copy(progress = 1f, finished = true) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                printRun.update { (it ?: PrintRun("QR code", 1, 1)).copy(finished = true, error = e.message ?: e.toString()) }
+            }
+        }
+    }
+
     // --------------------------------------------------------- print dialog
 
     private var src: Pair<String, Bitmap>? = null

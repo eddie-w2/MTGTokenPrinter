@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.08
+- New share button at the top of Settings: share the GitHub link with any app, or print a QR code sticker that links to it.
+- Redesigned long-press buttons: tiles with the icon over the label that slide out from the token and morph as you hover, with text that always fits.
+- New FAQ answers: recommended printers, and Google Play / App Store plans.
+
 ## 0.9.07
 - New print queue: press and hold a token and slide to Add to queue. Each token keeps the settings it was added with, so you can change settings between tokens and print them all at once. Find it at the top of the Decks tab.
 - Change printer type: once connected, the Printer window and Settings have a button to try your printer as another type (or detect it automatically again). In the scan list, tap Type next to a printer.
