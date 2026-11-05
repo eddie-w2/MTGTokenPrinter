@@ -321,7 +321,7 @@ private val faqGroups = listOf(
             ),
             FaqEntry(
                 "How can I share Token Printer?",
-                "Tap the share button at the top of Settings. Share the link sends the GitHub link to any app (it's also copied to the clipboard). Print a QR code prints a sticker titled MTG Token Printer with a QR code and the link written under it, handy for a deck box or your game store's table.",
+                "Tap the share button at the top of Settings. Share the link sends the GitHub link to any app (it's also copied to the clipboard). Print a QR code prints a sticker styled like a Magic card, with a QR code to the download page and the link written out, handy for a deck box or your game store's table.",
             ),
             FaqEntry(
                 "How can I support the project?",

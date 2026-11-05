@@ -3,6 +3,10 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.09
+- The QR code sticker now looks like a Magic card: a framed "MTG Token Printer" card with a {0} mana cost, the QR code as its art, a type line, rules and flavor text, the link and a 1/1 box.
+- The QR code and the shared link now go to the download (releases) page.
+
 ## 0.9.08
 - New share button at the top of Settings: share the GitHub link with any app, or print a QR code sticker that links to it.
 - Redesigned long-press buttons: tiles with the icon over the label that slide out from the token and morph as you hover, with text that always fits.
