@@ -14,7 +14,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
-import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.compose.foundation.layout.Arrangement
@@ -66,8 +65,8 @@ object ShareApp {
 
     /**
      * The QR sticker, styled like a Magic card so it fits in at a game store: a framed card with a black title bar
-     * ("MTG Token Printer" with a {0} mana cost, because it's free), the QR code as the art, a type line, rules and
-     * flavor text, the link spelled out, and a power/toughness box. Pure black and white for thermal paper.
+     * ("MTG Token Printer" with a {0} mana cost, because it's free), the QR code as the art, a type line, one line of
+     * rules text, the link spelled out, and a power/toughness box. Pure black and white for thermal paper.
      */
     fun qrPage(width: Int): Bitmap {
         val w = width.toFloat()
@@ -75,7 +74,6 @@ object ShareApp {
         val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
         val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE }
         val serifBold = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-        val serifItalic = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
         fun text(size: Float, face: Typeface, c: Int = Color.BLACK, align: Paint.Align = Paint.Align.LEFT) =
             TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = c; typeface = face; textSize = size; textAlign = align }
         fun fit(p: Paint, s: String, maxW: Float) { while (p.measureText(s) > maxW && p.textSize > 6f) p.textSize *= 0.96f }
@@ -100,24 +98,19 @@ object ShareApp {
         val artPad = (inW - qr) / 2f
         val artH = qr + 2 * artPad.coerceAtMost(w * 0.05f)
 
-        // Rules and flavor text box.
+        // Rules text box.
         val textPad = w * 0.035f
         val boxW = (inW - 2 * textPad).toInt()
         val rules = text(w * 0.048f, Typeface.create(Typeface.SERIF, Typeface.NORMAL))
-        val rulesText = "Scan this code: Download Token Printer. It's free and open source.\n" +
-            "Tap: Create any token, as a sticker, on a pocket printer."
+        val rulesText = "Tap: Create any token, as a sticker, on a pocket printer."
         val rulesLayout = StaticLayout.Builder.obtain(rulesText, 0, rulesText.length, rules, boxW)
             .setLineSpacing(0f, 1.05f).build()
-        val flavor = text(w * 0.043f, serifItalic)
-        val flavorText = "“Why count dice when you can print the whole army?”"
-        val flavorLayout = StaticLayout.Builder.obtain(flavorText, 0, flavorText.length, flavor, boxW)
-            .setAlignment(Layout.Alignment.ALIGN_CENTER).build()
         val link = text(w * 0.05f, serifBold, align = Paint.Align.CENTER)
         val shown = url.removePrefix("https://")
         val linkLines = if (link.measureText(shown) <= boxW) listOf(shown)
         else listOf(shown.substringBeforeLast('/') + "/", shown.substringAfterLast('/'))
         linkLines.forEach { fit(link, it, boxW.toFloat()) }
-        val textH = textPad + rulesLayout.height + gap + flavorLayout.height + gap * 1.4f +
+        val textH = textPad + rulesLayout.height + gap +
             link.fontSpacing * linkLines.size + textPad
 
         val ptH = w * 0.09f
@@ -127,7 +120,7 @@ object ShareApp {
         val typeY = artY + artH + gap
         val textY = typeY + barH + gap
         val bottom = textY + textH + ptH * 0.6f + gap // room for the P/T box that overlaps the text box
-        val height = (bottom + frame + outer + w * 0.05f).toInt()
+        val height = (bottom + frame + outer).toInt()
 
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
@@ -180,16 +173,11 @@ object ShareApp {
             moveTo(dx, dy - ds); lineTo(dx + ds, dy); lineTo(dx, dy + ds); lineTo(dx - ds, dy); close()
         }, white)
 
-        // Text box: rules, a divider, flavor, then the link.
+        // Text box: rules, then the link.
         c.drawRect(barL, textY, barR, textY + textH, line)
         var y = textY + textPad
         c.save(); c.translate(barL + textPad, y); rulesLayout.draw(c); c.restore()
-        y += rulesLayout.height + gap / 2
-        line.strokeWidth = (w * 0.004f).coerceAtLeast(1f)
-        c.drawLine(barL + inW * 0.2f, y, barR - inW * 0.2f, y, line)
-        y += gap / 2
-        c.save(); c.translate(barL + textPad, y); flavorLayout.draw(c); c.restore()
-        y += flavorLayout.height + gap * 1.4f - link.ascent()
+        y += rulesLayout.height + gap - link.ascent()
         linkLines.forEach { l ->
             c.drawText(l, w / 2f, y, link)
             y += link.fontSpacing
@@ -205,11 +193,6 @@ object ShareApp {
         val ptText = text(ptH * 0.62f, serifBold, align = Paint.Align.CENTER)
         c.drawText("1/1", pt.centerX(), pt.centerY() - (ptText.ascent() + ptText.descent()) / 2, ptText)
 
-        // Small print under the card.
-        val small = text(w * 0.032f, Typeface.SANS_SERIF, align = Paint.Align.CENTER)
-        val note = "Unofficial fan-made app. Not affiliated with Wizards of the Coast."
-        fit(small, note, w - 2 * outer)
-        c.drawText(note, w / 2f, bottom + frame + outer + w * 0.035f, small)
         return bmp
     }
 }
