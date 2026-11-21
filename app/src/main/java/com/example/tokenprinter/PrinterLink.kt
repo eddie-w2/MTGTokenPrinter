@@ -252,6 +252,7 @@ class BleLink(
     override suspend fun send(data: ByteArray, pace: Pace, pipe: Pipe, onChunk: ((Int) -> Unit)?) {
         val g = gatt ?: throw IOException("Not connected")
         val c = (if (pipe == Pipe.Bulk) bulk else null) ?: write ?: throw IOException("Not connected")
+        log("→ ${hexHead(data)}")
         val chunk = maxOf(20, minOf(pace.chunkCap, mtu - 3 - pace.reserve))
         var off = 0
         while (off < data.size) {
@@ -359,6 +360,7 @@ class SppLink(
 
     override suspend fun send(data: ByteArray, pace: Pace, pipe: Pipe, onChunk: ((Int) -> Unit)?) = withContext(Dispatchers.IO) {
         val o = out ?: throw IOException("Not connected")
+        log("→ ${hexHead(data)}")
         val chunk = maxOf(20, pace.chunkCap)
         var off = 0
         while (off < data.size) {
@@ -390,3 +392,7 @@ class SppLink(
         val SPP: UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
     }
 }
+
+/** The first bytes of an outgoing message for the printer log, plus its length. */
+internal fun hexHead(b: ByteArray): String =
+    b.take(32).joinToString(" ") { "%02X".format(it) } + if (b.size > 32) " … (${b.size} bytes)" else ""

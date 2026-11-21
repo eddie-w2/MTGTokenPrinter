@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Print
@@ -55,6 +56,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -264,6 +266,26 @@ fun SettingsTab(
                     Text("Report a bug")
                 }
             }
+            TextButton(onClick = {
+                val text = "Token Printer ${Updater.installedName(ctx)} printer log\n\n" +
+                    vm.printer.logText().ifEmpty { "(empty: connect and print first)" }
+                val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, "Token Printer printer log")
+                    putExtra(android.content.Intent.EXTRA_TEXT, text)
+                }
+                ctx.startActivity(android.content.Intent.createChooser(send, "Share printer log"))
+            }) {
+                Icon(Icons.Filled.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Share printer log")
+            }
+            Text(
+                "Records what the app sends to your printer and what it answers. If printing goes wrong, print once, " +
+                    "then share the log with your bug report.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         SettingsCard("App updates") {

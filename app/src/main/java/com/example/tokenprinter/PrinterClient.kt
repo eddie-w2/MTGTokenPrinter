@@ -414,9 +414,15 @@ class PrinterClient(private val ctx: Context, private val scope: CoroutineScope)
     // ----------------------------------------------------------------- helpers
 
     fun log(s: String) {
-        log.value = (log.value + s).takeLast(60)
+        val t = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US).format(java.util.Date())
+        log.value = (log.value + "$t $s").takeLast(LOG_LINES)
     }
+
+    /** The printer log as plain text, for Settings > Help > Share printer log. */
+    fun logText(): String = log.value.joinToString("\n")
 
     private fun hexShort(b: ByteArray) =
         b.take(24).joinToString(" ") { "%02X".format(it) } + if (b.size > 24) " …" else ""
 }
+
+private const val LOG_LINES = 600

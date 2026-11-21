@@ -3,6 +3,11 @@
 Each "## version" section becomes the release notes shown in the app's update pop-up. Keep it short and plain.
 Newest version first.
 
+## 0.9.11
+- D20 (Nada Print): fixed prints coming out at full darkness after the printer's firmware update. The Darkness setting now goes lighter on the D20.
+- Status and battery replies from updated Phomemo/Nada firmware are understood again.
+- New Settings > Help > Share printer log: shows what the app sent to the printer and what it answered, to attach to bug reports.
+
 ## 0.9.10
 - Shorter QR code sticker: removed the extra rules text, the flavor text and the small print.
 

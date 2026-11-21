@@ -47,6 +47,7 @@ object Contact {
             |
             |
             |Screenshots or a photo of the print help a lot. Please attach them.
+            |For printing problems: print once, then Settings > Help > Share printer log and paste or attach it.
             |
             |---- Filled in by the app (please leave) ----
             |App version: $version

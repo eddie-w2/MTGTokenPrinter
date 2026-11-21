@@ -801,7 +801,8 @@ class PhomemoDriver(type: PrinterType, address: String, scope: CoroutineScope, i
             val buf = pending.toByteArray()
             var i = 0
             while (i < buf.size) {
-                if (buf[i].toInt() != 0x1A) {
+                // Older firmware starts replies with 0x1A, newer (e.g. D20 updated Nov 2026) with 0x1C.
+                if (buf[i].toInt() != 0x1A && buf[i].toInt() != 0x1C) {
                     i++
                     continue
                 }
@@ -856,8 +857,14 @@ class PhomemoDriver(type: PrinterType, address: String, scope: CoroutineScope, i
 
     fun build(job: RasterJob): ByteArray {
         val out = ByteArrayOutputStream()
-        val level = (type.densityFor(job.darkness) ?: 2).coerceIn(1, 4)
-        val (density, coefficient) = DENSITY_LEVELS[level - 1]
+        val (density, coefficient) = if (type.key == PrinterCatalog.NADA_D20) {
+            // Updated D20 firmware printed everything at full heat with the M02 table, so it gets a lighter, wider
+            // spread that also lowers the heat strength (0x37).
+            D20_LEVELS[(job.darkness - 1).coerceIn(0, D20_LEVELS.size - 1)]
+        } else {
+            DENSITY_LEVELS[(type.densityFor(job.darkness) ?: 2).coerceIn(1, 4) - 1]
+        }
+        log("darkness ${job.darkness} → density $density, strength $coefficient")
         out.write(byteArrayOf(0x1B, 0x40))
         out.write(byteArrayOf(0x1F, 0x11, 0x02, density.toByte()))
         out.write(byteArrayOf(0x1F, 0x11, 0x37, coefficient.toByte()))
@@ -897,6 +904,7 @@ class PhomemoDriver(type: PrinterType, address: String, scope: CoroutineScope, i
 
     companion object {
         private val DENSITY_LEVELS = listOf(1 to 100, 2 to 100, 4 to 100, 4 to 150)
+        private val D20_LEVELS = listOf(1 to 40, 1 to 70, 2 to 100)
         private val SIZES = mapOf(
             0x03 to 2, 0x04 to 2, 0x05 to 2, 0x06 to 2, 0x07 to 4, 0x08 to 16,
             0x09 to 2, 0x0B to 2, 0x0E to 2, 0x0F to 2, 0x16 to 2, 0x17 to 2,
